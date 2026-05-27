@@ -5,6 +5,9 @@ spring:
   application:
     name: sprintlog-boot
 
+  profiles:
+    active: dev
+
 server:
   port: 8080
 

@@ -1,0 +1,13 @@
+# 개발 환경 (dev profile) 추가 설정
+# application.yml의 값들을 덮어쓰거나 보강
+
+sprintlog:
+  welcome-message: "SprintLog Boot - DEV 환경 (개발자 모드)"
+  sample-data:
+    enabled: true
+    count: 4
+
+# 개발 시에는 자세한 로그가 도움 됨.
+logging:
+  level:
+    com.sprintlog: debug

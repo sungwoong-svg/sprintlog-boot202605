@@ -2,10 +2,11 @@ package com.sprintlog.sprintlogboot.printer;
 
 
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 @Component("console") // 이름을 안붙이는게 일반적
-// @Primary // ActivityPrinter 타입의 객체에서는 이거 붙인게 기본값
+//@Primary // ActivityPrinter 타입의 객체에서는 이거 붙인게 기본값
 public class ConsoleActivityPrinter implements ActivityPrinter {
 
     @Override

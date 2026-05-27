@@ -1,14 +1,12 @@
 package com.sprintlog.sprintlogboot;
 
-import com.sprintlog.sprintlogboot.domain.LectureLog;
-import com.sprintlog.sprintlogboot.domain.PracticeLog;
-import com.sprintlog.sprintlogboot.domain.ReadingLog;
-import com.sprintlog.sprintlogboot.domain.Visibility;
+import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.lifecycle.ImportBatch;
 import com.sprintlog.sprintlogboot.printer.ActivityPrinter;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityReportService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -40,6 +38,7 @@ public class SprintlogBootApplication {
             ActivityRepository repository,
             ActivityDashboard dashboard,
             ActivityReportService reportService,
+            @Qualifier("compact") ActivityPrinter defaultPrinter,
             List<ActivityPrinter> allPrinters,
             Map<String, ActivityPrinter> printersByName,
             @Value("${sprintlog.welcome-message}") String welcomeMessage) {
@@ -52,8 +51,11 @@ public class SprintlogBootApplication {
             System.out.println("==================================================");
 
             System.out.println();
-            System.out.println(welcomeMessage);
-
+            System.out.println("── Repository 상태 (Profile 별 Initializer 가 결정) ──");
+            System.out.println("  활동 수: " + repository.count() + "개");
+            for (LearningActivity activity : repository.findAll()) {
+                defaultPrinter.print(activity);
+            }
 
             System.out.println();
             System.out.println("==================================================");
