@@ -9,6 +9,7 @@ import com.sprintlog.sprintlogboot.printer.ActivityPrinter;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityReportService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -40,41 +41,18 @@ public class SprintlogBootApplication {
             ActivityDashboard dashboard,
             ActivityReportService reportService,
             List<ActivityPrinter> allPrinters,
-            Map<String, ActivityPrinter> printersByName) {
+            Map<String, ActivityPrinter> printersByName,
+            @Value("${sprintlog.welcome-message}") String welcomeMessage) {
 
         // CommandLineRunner의 구현체를 익명 클래스 람다식으로 작성. run 메서드를 구현.
         return args -> {
             System.out.println();
             System.out.println("==================================================");
-            System.out.println("  SprintLog Boot — Bean Scope + 생명주기 시연");
+            System.out.println("  SprintLog Boot — 외부 설정 시연");
             System.out.println("==================================================");
 
-            // 1. DataInitializer 의 @PostConstruct 가 이미 실행됐는지 확인
-            //    (이 메서드 실행 시점엔 이미 샘플 데이터가 있어야 함)
             System.out.println();
-            System.out.println("── 1. CommandLineRunner 시작 시점의 Repository 상태 ──");
-            System.out.println("  활동 수: " + repository.count() + "개 (← DataInitializer 가 미리 적재)");
-
-            // 2. Singleton 검증 — 같은 ActivityRepository 를 두 번 꺼내면 동일 인스턴스인가?
-            System.out.println();
-            System.out.println("── 2. Singleton 검증 — ActivityRepository ──");
-            ActivityRepository repo1 = context.getBean(ActivityRepository.class);
-            ActivityRepository repo2 = context.getBean(ActivityRepository.class);
-            System.out.println("  repo1 == repo2 ? " + (repo1 == repo2));
-            System.out.println("  repo1.hashCode(): " + repo1.hashCode());
-            System.out.println("  repo2.hashCode(): " + repo2.hashCode());
-            System.out.println("  Parameter repo: " + repository.hashCode());
-
-            // 3. Prototype 검증 — ImportBatch 를 두 번 꺼내면 서로 다른 인스턴스일까?
-            System.out.println();
-            System.out.println("── 3. Prototype 검증 — ImportBatch ──");
-            ImportBatch batch1 = context.getBean(ImportBatch.class);
-            // 살짝 시간 차이를 두고 두 번째 인스턴스 생성
-            Thread.sleep(10);
-            ImportBatch batch2 = context.getBean(ImportBatch.class);
-            System.out.println("  batch1: " + batch1);
-            System.out.println("  batch2: " + batch2);
-            System.out.println("  batch1 == batch2 ? " + (batch1 == batch2));
+            System.out.println(welcomeMessage);
 
 
             System.out.println();

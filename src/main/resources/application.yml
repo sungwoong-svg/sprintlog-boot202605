@@ -1,6 +1,15 @@
+# SprintLog Boot의 기본 설정 파일
+# Spring Boot가 초기화 될 때 항상 이 파일을 읽는다.
+
 spring:
   application:
     name: sprintlog-boot
 
 server:
   port: 8080
+
+sprintlog:
+  welcome-message: "SprintLog Boot - 외부 설정 시연(기본)"
+  sample-data:
+      enabled: true
+      count: 4
