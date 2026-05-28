@@ -1,12 +1,14 @@
 package com.sprintlog.sprintlogboot.domain;
 
 import com.sprintlog.sprintlogboot.exception.InvalidActivityException;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+@Getter
 public abstract class LearningActivity implements Serializable {
 
     // 이 파일의 클래스 구조가 현재 클래스와 같은지에 대한 버전 키 검사용 필드
@@ -99,35 +101,4 @@ public abstract class LearningActivity implements Serializable {
         this.visibility = Visibility.PRIVATE;
     }
 
-    public static int getTotalCreateCount() {
-        return totalCreateCount;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public int getMinutes() {
-        return minutes;
-    }
-
-    public Visibility getVisibility() {
-        return visibility;
-    }
-
-    public String getVisibilityText() {
-        return this.visibility.getLabel();
-    }
-
-    public boolean isPublicActivity() {
-        return this.visibility == Visibility.PUBLIC;
-    }
-
-    public ActivityCategory getCategory() {
-        return category;
-    }
 }
