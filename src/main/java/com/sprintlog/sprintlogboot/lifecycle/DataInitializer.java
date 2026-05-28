@@ -13,18 +13,18 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Profile("dev")
-public class DateInitializer {
+public class DataInitializer {
 
     private final ActivityRepository repository;
     private final SprintLogProperties properties;
 
     // 생성자는 객체 초기화 및 의존성 주입 로직을 주로 사용
-    public DateInitializer(ActivityRepository repository, SprintLogProperties properties) {
+    public DataInitializer(ActivityRepository repository, SprintLogProperties properties) {
         this.repository = repository;
         this.properties = properties;
     }
 
-    // 주입된 의존성 객체를 가지고 무언가 해야할 로직을 작성
+    // 주입된 의존성 객체를 가지고 무언가 해야 할 로직을 작성.
     @PostConstruct
     public void loadSampleData() {
 
@@ -35,7 +35,6 @@ public class DateInitializer {
             return;
         }
 
-
         System.out.println("[lifecycle] @PostConstruct — DataInitializer 가 샘플 데이터를 적재합니다.");
 
         repository.add(new LectureLog("Spring Bean Scope", 90, Visibility.PUBLIC, "이강사"));
@@ -45,7 +44,6 @@ public class DateInitializer {
 
         System.out.println("[lifecycle] 샘플 데이터 적재 완료 — 총 " + repository.count() + "개");
     }
-
 
     @PreDestroy
     public void shutdown() {

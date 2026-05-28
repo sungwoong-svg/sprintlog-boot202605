@@ -7,7 +7,7 @@ sprintlog:
     enabled: true
     count: 4
 
-# 개발 시에는 자세한 로그가 도움 됨.
+# 개발 시에는 자세한 로그가 도움됨.
 logging:
   level:
     com.sprintlog: debug

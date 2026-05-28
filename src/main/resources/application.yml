@@ -14,5 +14,5 @@ server:
 sprintlog:
   welcome-message: "SprintLog Boot - 외부 설정 시연(기본)"
   sample-data:
-      enabled: true
-      count: 4
+    enabled: true
+    count: 4

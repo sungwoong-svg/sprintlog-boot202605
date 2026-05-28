@@ -2,10 +2,8 @@ package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
-import com.sprintlog.sprintlogboot.printer.ActivityPrinter;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -90,38 +88,6 @@ public class ActivityDashboard {
 
         public int getReadingCount() {
             return readingCount;
-        }
-    }
-
-    /**
-     * 보고서 출력기
-     * 외부 클래스(ActivityDashboard)가 가지고 있는 activities 배열에 접근해야 하기 때문에
-     * static을 붙이지 않은 멤버 내부 클래스로 선언.
-     */
-    public class ReportBuilder {
-
-        private final ActivityPrinter printer;
-
-        // ActivityPrint 타입을 가질 수 있는 Bean이 두개(console, compact)
-        // Spring은 어떤 Bean을 주입해야 할 지 판단할 수 없다.
-        // @Qualifier를 통해 어떤 Bean을 주입할 지 지목할 수 있다.
-        public ReportBuilder(@Qualifier("console") ActivityPrinter printer) {
-            if (printer == null) {
-                throw new IllegalArgumentException("출력 도구는 null일 수 없습니다.");
-            }
-            this.printer = printer;
-        }
-
-        public void print() {
-            Summary summary = summarize();  // 외부 클래스의 summarize() 호출
-            System.out.println("── 활동 수: 총 " + summary.getTotalCount()
-                    + "개 (강의 " + summary.getLectureCount()
-                    + " / 실습 " + summary.getPracticeCount()
-                    + " / 독서 " + summary.getReadingCount() + ")");
-
-            for (LearningActivity activity : repository.findAll()) {  // 외부 클래스의 activities 접근
-                printer.print(activity);
-            }
         }
     }
 

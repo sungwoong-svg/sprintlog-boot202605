@@ -2,12 +2,12 @@
 # application.yml의 값들을 덮어쓰거나 보강
 
 sprintlog:
-  welcome-message: "SprintLog Boot - PRODUCTION 환경 (운영 환경)"
+  welcome-message: "SprintLog Boot - PRODUCTION (운영 환경)"
   sample-data:
     enabled: false
     count: 4
 
-#
+# 개발 시에는 자세한 로그가 도움됨.
 logging:
   level:
     com.sprintlog: warn

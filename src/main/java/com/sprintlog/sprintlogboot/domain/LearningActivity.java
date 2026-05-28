@@ -99,10 +99,6 @@ public abstract class LearningActivity implements Serializable {
         this.visibility = Visibility.PRIVATE;
     }
 
-
-    public abstract String getActivityType(); // 강의, 실습, 독서
-    public abstract String getDetailText(); // 유형별 세부 정보
-
     public static int getTotalCreateCount() {
         return totalCreateCount;
     }

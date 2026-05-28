@@ -3,12 +3,9 @@ package com.sprintlog.sprintlogboot.domain;
 
 
 
-import com.sprintlog.sprintlogboot.policy.Reviewable;
-import com.sprintlog.sprintlogboot.policy.Shareable;
-
 import java.io.Serializable;
 
-public class PracticeLog extends LearningActivity implements Reviewable, Shareable, Serializable {
+public class PracticeLog extends LearningActivity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,17 +16,6 @@ public class PracticeLog extends LearningActivity implements Reviewable, Shareab
     public PracticeLog(String title, int minutes, Visibility visibility, int completionRate) {
         super(title, minutes, visibility, ActivityCategory.PRACTICE);
         this.completionRate = normalizeCompletionRate(completionRate);
-    }
-
-
-    @Override
-    public boolean needsReview() {
-        return getCategory().isShortStudy(getMinutes()) || completionRate < MINIMUM_COMPLETION_RATE;
-    }
-
-    @Override
-    public void printReviewTarget() {
-        System.out.println("[복습 권장] " + getTitle() + " (완료율: " + completionRate + "%)");
     }
 
     public int getCompletionRate() {
@@ -48,23 +34,4 @@ public class PracticeLog extends LearningActivity implements Reviewable, Shareab
         return completionRate;
     }
 
-    @Override
-    public boolean canShare() {
-        return isPublicActivity();
-    }
-
-    @Override
-    public String getShareTitle() {
-        return getTitle();
-    }
-
-    @Override
-    public String getActivityType() {
-        return "실습";
-    }
-
-    @Override
-    public String getDetailText() {
-        return "완료율: " + completionRate + "%";
-    }
 }

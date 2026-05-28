@@ -5,9 +5,6 @@ import com.sprintlog.sprintlogboot.domain.*;
 import org.springframework.stereotype.Repository;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -16,9 +13,6 @@ import java.util.function.Predicate;
 
 @Repository // 이 클래스는 Repository 역할을 하는 클래스고, bean으로 등록해 줘.
 public class ActivityRepository {
-
-    private static final String CSV_HEADER =
-            "type,title,minutes,visibility,tags,instructorName,completionRate,bookTitle";
 
     private final List<LearningActivity> storage = new ArrayList<>();
 
@@ -68,33 +62,5 @@ public class ActivityRepository {
         }
         return total;
     }
-
-
-    public void saveToBinary(Path binaryPath) throws IOException {
-        Path parent = binaryPath.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
-        }
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new BufferedOutputStream(Files.newOutputStream(binaryPath)))) {
-            oos.writeObject(new ArrayList<>(storage));
-        }
-    }
-
-    // # Spring에서 달라진 점
-    // 기존 코드는 static 메서드로 새 객체륾 만들어서 리턴했다면
-    // Spring에서는 ActivityRepository가 컨테이너를 관리하는 단일 Bean이기 때문에
-    // 새 객체를 직접 생성하는 게 아닌 기존 Bean에 데이터를 적재하는 패턴이 좀 더 자연스럽다.
-    public void loadFromBinary(Path binaryPath) throws IOException, ClassNotFoundException {
-
-        try (ObjectInputStream ois = new ObjectInputStream(new BufferedInputStream(Files.newInputStream(binaryPath)))) {
-            List<LearningActivity> list = (List<LearningActivity>) ois.readObject();
-            for (LearningActivity a : list) {
-                this.add(a);
-            }
-        }
-
-    }
-
 
 }
