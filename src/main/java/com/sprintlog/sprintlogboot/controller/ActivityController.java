@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,10 +23,26 @@ public class ActivityController {
     private final ActivityRepository repository;
     private final ActivityDashboard dashboard;
 
-    // 모든 활동 목록
+    // 모든 활동 목록(페이징)
     @GetMapping
-    public ResponseEntity<List<LearningActivity>> getAll() {
-        List<LearningActivity> list = repository.findAll();
+    public ResponseEntity<List<LearningActivity>> getAll(
+            @RequestParam(defaultValue = "id") String sort,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Comparator<LearningActivity> comparator = switch (sort) {
+            case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
+            case "title" -> Comparator.comparing(LearningActivity::getTitle);
+            default -> Comparator.comparing(LearningActivity::getId);
+        };
+
+
+        List<LearningActivity> list = repository.findAll().stream()
+                .sorted(comparator)
+                .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
+                .limit(size) // 이 줄까지 같이 봐야함 / 1페이지면 0 * 10이라 0개 / 그래서 0페이지면 0개 건너뛰고 10개, 1페이지면 10개 건너뛰고 10개.
+                .toList();
+
         return ResponseEntity.ok().body(list);
     }
 
