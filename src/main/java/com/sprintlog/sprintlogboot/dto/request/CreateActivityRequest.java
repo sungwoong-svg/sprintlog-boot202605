@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import jakarta.validation.constraints.*;
@@ -10,6 +11,7 @@ public record CreateActivityRequest(
 
         // 빈 문자열과, 공백 문자열 허용 / null은 안됨!
         @NotNull(message = "활동 유형(type)은 필수입니다.")
+        @JsonProperty("category")
         ActivityCategory type,
 
 //        @NotEmpty: 공백 문자열 허용 / 빈문자열, null은 안됨!
