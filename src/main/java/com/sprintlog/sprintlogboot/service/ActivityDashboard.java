@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.service;
 
+import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
@@ -18,6 +19,7 @@ public class ActivityDashboard {
     /**
      * 카테고리별 활동 수를 세어 Summary를 만들자.
      */
+    @LogExecutionTime
     public Summary summarize() {
 
         // 로컬 클래스 선언: summarize() 밖에서는 사용할 수 없다.
