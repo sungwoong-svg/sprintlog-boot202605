@@ -25,6 +25,9 @@ dependencies {
     // hateoas: 응답에 _links(자기 자신과 연관된 리소스로 가는 링크)를 붙여주는 라이브러리
     implementation 'org.springframework.boot:spring-boot-starter-hateoas'
 
+    // Spring AOP - @Aspect / @Around 로 횡단 관심사 (로깅, 실행시간) 분리
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
     // [신규] Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
