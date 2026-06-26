@@ -1,6 +1,21 @@
 # 개발 환경 (dev profile) 추가 설정
 # application.yml의 값들을 덮어쓰거나 보강
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sprintlog
+    username: sprintlog
+    password: sprintlog
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update # 엔터티 클래스를 보고 CREATE, ALTER을 자동으로 만들어서 DB에 적용해 줍니다.
+    show-sql: true # 실행되는 SQL을 콘솔에 보여준다.
+    properties:
+      hibernate:
+        format_sql: true # SQL을 보기 좋게 들여쓰기
+
+
 sprintlog:
   welcome-message: "SprintLog Boot - DEV 환경 (개발자 모드)"
   sample-data:
@@ -11,3 +26,6 @@ sprintlog:
 logging:
   level:
     com.sprintlog: debug
+    # hibernate가 실제로 완성하는 SQL과 ? 자리에 채워지는 바인딩 값을 함께 보기 위함
+    org.hibernate.sql: debug
+    org.hibernate.orm.jdbc.bind: trace
