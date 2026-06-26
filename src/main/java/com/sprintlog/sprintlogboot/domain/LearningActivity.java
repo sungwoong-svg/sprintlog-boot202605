@@ -1,6 +1,15 @@
 package com.sprintlog.sprintlogboot.domain;
 
 import com.sprintlog.sprintlogboot.exception.InvalidActivityException;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
 import java.io.Serializable;
@@ -9,30 +18,55 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Getter
-public abstract class LearningActivity implements Serializable {
+@Entity
+@Table(name = "activities")
+public class LearningActivity extends BaseEntity {
 
-    // 이 파일의 클래스 구조가 현재 클래스와 같은지에 대한 버전 키 검사용 필드
-    private static final long serialVersionUID = 1L;
-
-    private static int totalCreateCount = 0;
-
-    private final long id;
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false)
     private int minutes;
+
+    // Enum을 DB에 어떻게 넣을지를 정의 (STRING: 상수를 문자열로 변환, ORDINAL: 상수의 순서 숫자로 변환)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private Visibility visibility;
-    private final ActivityCategory category;
-    private final Set<String> tags = new HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ActivityCategory category;
 
-    public LearningActivity(String title, int minutes, Visibility visibility, ActivityCategory category) {
+    @Column(length = 50)
+    private String instructorName; // LECTURE 전용
+
+    private Integer completionRate; // PRACTICE 전용
+
+    @Column(length = 200)
+    private String bookTitle; // READING 전용 // 추후 널값 애들은 제이슨이그노어로 리스폰스에서 뺄 예정
+
+    // 컬렉션 자료형을 별도의 테이블로 매핑. 테이블 이름은 activity_tags, 활동 테이블과 조인할 수 있는 외래 키 이름은 activity_id
+    // ElementCollection: 활동 객체를 조회할 때 tag의 조회 방식
+    // EAGER: 무조건 tag를 조인해서 끌고옴 / LAZY: 내가 직접 tag를 지목하기 전까진 조회 안됨 / 실무에서는 LAZY 선호 (효율)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "activity_tags", joinColumns = @JoinColumn(name = "activity_id"))
+    @Column(name = "tag")
+    private Set<String> tags = new HashSet<>();
+
+    // JPA가 사용하는 생성자를 protected로 선언 (없으면 JPA가 조회한 내용을 객체로 변환할 수 없습니다.)
+    protected LearningActivity() {}
+
+    public LearningActivity(ActivityCategory category, String title, int minutes, Visibility visibility,
+                            String instructorName, Integer completionRate, String bookTitle) {
         validateTitle(title);
         validateMinutes(minutes);
-        totalCreateCount++;
-        this.id = totalCreateCount;
+        this.category = category;
         this.title = title.trim(); // 좌우 공백 제거
         this.minutes = minutes;
         this.visibility = visibility;
-        this.category = category;
+        this.instructorName = normalizeInstructorName(category, instructorName);
+        this.completionRate = normalizeCompletionRate(completionRate);
+        this.bookTitle = bookTitle;
     }
 
     /**
@@ -70,11 +104,6 @@ public abstract class LearningActivity implements Serializable {
     }
 
 
-
-    public static int getTotalCreatedCount() {
-        return totalCreateCount;
-    }
-
     public void extendStudy(int additionalMinutes) {
         if (additionalMinutes <= 0) {
             throw new InvalidActivityException(
@@ -109,4 +138,26 @@ public abstract class LearningActivity implements Serializable {
         this.visibility = Visibility.PRIVATE;
     }
 
+    // 이전 LectureLog 의 정규화 로직을 흡수: 강의인데 강사명이 비면 "강사 미정".
+    private static String normalizeInstructorName(ActivityCategory category, String instructorName) {
+        if (category == ActivityCategory.LECTURE && (instructorName == null || instructorName.isBlank())) {
+            return "강사 미정";
+        }
+        return instructorName;
+    }
+
+    // 이전 PracticeLog 의 정규화 로직을 흡수: 완료율은 0~100 범위로 보정(없으면 null 유지).
+    private static Integer normalizeCompletionRate(Integer completionRate) {
+        if (completionRate == null) {
+            return null;
+        }
+        if (completionRate < 0) {
+            return 0;
+        }
+        if (completionRate > 100) {
+            return 100;
+        }
+        return completionRate;
+    }
 }
+
