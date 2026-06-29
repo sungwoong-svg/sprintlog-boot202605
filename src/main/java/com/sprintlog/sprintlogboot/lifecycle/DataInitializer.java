@@ -37,26 +37,38 @@ public class DataInitializer {
         }
 
         log.info("[lifecycle] @PostConstruct — DataInitializer 가 샘플 데이터를 적재합니다.");
-
-        if (repository.count() == 0) {
-            repository.save(new LearningActivity(
-                ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null));
-            repository.save(new LearningActivity(
-                ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null));
-            repository.save(new LearningActivity(
-                ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판"));
-            repository.save(new LearningActivity(
-                ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null));
-        }
-
-        log.info("[lifecycle] 샘플 데이터 적재 완료 — 총 {}개", repository.count());
-
         if (userRepository.count() == 0) {
             User choon = new User("김춘식", "choon@naver.com");
             userRepository.save(choon);
-            User saved = userRepository.save(new User("홍길동", "hong@gmail.com"));
-            log.info("User 저장 완료 - saved id={}, createdAt={}", saved.getId(), saved.getCreatedAt());
+            User hong = new User("홍길동", "hong@gmail.com");
+            User saved = userRepository.save(hong);
+            log.info("[lifecycle] User 저장 완료 - saved id={}, createdAt={}"
+                , saved.getId(), saved.getCreatedAt());
+
+
+            LearningActivity l1 = new LearningActivity(
+                ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null);
+            l1.assignOwner(choon);
+            repository.save(l1);
+            LearningActivity l2 = new LearningActivity(
+                ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null);
+            l2.assignOwner(choon);
+            repository.save(l2);
+
+            LearningActivity l3 = new LearningActivity(
+                ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판");
+            l3.assignOwner(hong);
+            repository.save(l3);
+            LearningActivity l4 = new LearningActivity(
+                ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null);
+            l4.assignOwner(hong);
+            repository.save(l4);
         }
+
+
+
+
+        log.info("[lifecycle] 샘플 데이터 적재 완료 — 총 {}개", repository.count());
 
         log.info("DB 사용자 수: {}명", userRepository.count());
 

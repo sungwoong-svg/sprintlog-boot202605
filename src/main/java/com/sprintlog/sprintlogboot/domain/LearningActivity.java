@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sprintlog.sprintlogboot.exception.InvalidActivityException;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -9,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -56,6 +58,16 @@ public class LearningActivity extends BaseEntity {
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
 
+    // 여러 활동이 한 사용자를 가리킨다.
+    // 자바에서는 사용자의 정보를 User라는 객체로 표현이 가능하지만, DB에서는 User정보를 한 칸에 넣을 수는 없다.
+    // @ManyToOne을 통해 1:N 관계라는 것을 알려주고, 연관관계의 주인인 activities에게 어떤 유저가 추가한 활동인지에 대한 정보를
+    // joinColumn으로 알려주겠다. 이름은 "owner_id"로 설정하겠다. -> 이 값이 곧 외래키(FK)가 된다.
+    // 연관관계의 주인: 관계를 저장하거나 변경하는 것이 가능하다.
+    @ManyToOne
+    @JoinColumn(name = "owner_id")
+    @JsonIgnore
+    private User owner;
+
     // JPA가 사용하는 생성자를 protected로 선언 (없으면 JPA가 조회한 내용을 객체로 변환할 수 없습니다.)
     protected LearningActivity() {}
 
@@ -81,6 +93,10 @@ public class LearningActivity extends BaseEntity {
             throw new InvalidActivityException("태그는 비워둘 수 없습니다.");
         }
         tags.add(tag.trim().toLowerCase());
+    }
+    // 활동의 주인을 지정하는 setter 메서드(대부분 setter는 이름이 set + 필드명으로 지정되지만, 원한다면 자유롭게 세팅 가능)
+    public void assignOwner(User owner) {
+        this.owner = owner;
     }
 
     // 첨부 파일명을 활동 객체에 추가한다. (평범한 setter)

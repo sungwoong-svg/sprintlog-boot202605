@@ -40,7 +40,8 @@ public class ActivityController implements ActivityControllerDocs{
     public ResponseEntity<List<EntityModel<ActivityResponse>>> getAll(
             @RequestParam(defaultValue = "id") String sort,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) Long ownerId
     ) {
         Comparator<LearningActivity> comparator = switch (sort) {
             case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
@@ -48,8 +49,10 @@ public class ActivityController implements ActivityControllerDocs{
             default -> Comparator.comparing(LearningActivity::getId);
         };
 
+        List<LearningActivity> source =
+            (ownerId != null) ? repository.findByOwnerId(ownerId) : repository.findAll();
 
-        List<EntityModel<ActivityResponse>> list = repository.findAll().stream()
+        List<EntityModel<ActivityResponse>> list = source.stream()
                 .sorted(comparator)
                 .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
                 .limit(size) // 이 줄까지 같이 봐야함 / 1페이지면 0 * 10이라 0개 / 그래서 0페이지면 0개 건너뛰고 10개, 1페이지면 10개 건너뛰고 10개.

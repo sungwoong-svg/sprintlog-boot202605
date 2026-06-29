@@ -38,7 +38,9 @@ public interface ActivityControllerDocs {
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "한 화면에 보여질 데이터 크기", example = "20")
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "주인 사용자 id(선택)", example = "1")
+            @RequestParam(required = false) Long ownerId
     );
 
     @Operation(summary = "활동 단건 조회", description = "id로 활동 하나를 상세하게 반환한다. 없으면 404(ProblemDetail)")
