@@ -1,9 +1,8 @@
 package com.sprintlog.sprintlogboot.lifecycle;
 
 import com.sprintlog.sprintlogboot.config.SprintLogProperties;
-import com.sprintlog.sprintlogboot.domain.LectureLog;
-import com.sprintlog.sprintlogboot.domain.PracticeLog;
-import com.sprintlog.sprintlogboot.domain.ReadingLog;
+import com.sprintlog.sprintlogboot.domain.ActivityCategory;
+import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
@@ -39,10 +38,16 @@ public class DataInitializer {
 
         log.info("[lifecycle] @PostConstruct — DataInitializer 가 샘플 데이터를 적재합니다.");
 
-        repository.add(new LectureLog("Spring Bean Scope", 90, Visibility.PUBLIC, "이강사"));
-        repository.add(new PracticeLog("@PostConstruct 실습", 60, Visibility.PUBLIC, 85));
-        repository.add(new ReadingLog("스프링 인 액션", 75, Visibility.PUBLIC, "스프링 인 액션 5판"));
-        repository.add(new LectureLog("Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사"));
+        if (repository.count() == 0) {
+            repository.save(new LearningActivity(
+                ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null));
+            repository.save(new LearningActivity(
+                ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null));
+            repository.save(new LearningActivity(
+                ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판"));
+            repository.save(new LearningActivity(
+                ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null));
+        }
 
         log.info("[lifecycle] 샘플 데이터 적재 완료 — 총 {}개", repository.count());
 
@@ -60,8 +65,7 @@ public class DataInitializer {
     @PreDestroy
     public void shutdown() {
         log.info("[lifecycle] @PreDestroy — DataInitializer 가 종료 정리를 합니다.");
-        log.info("[lifecycle] 최종 활동 수: {}개, 총 학습 시간: {}분"
-                , repository.count(), repository.getTotalMinutes());
+
 
     }
 

@@ -22,20 +22,10 @@ public record ActivityResponse(
 
     /**
      * 도메인 엔티티 → 응답 DTO 로 변환하는 정적 팩토리.
-     * 어떤 하위 타입인지에 따라(패턴 매칭) 그 타입만의 필드를 추가로 채운다.
+     * 상속 구조를 없앴기 때문에 단순히 getter로 읽으면 되고, @JsonInclude를 선언해 놨기 때문에
+     * null값이라면 알아서 JSON에서 생략된다.
      */
     public static ActivityResponse from(LearningActivity activity) {
-        String instructorName = null;
-        Integer completionRate = null;
-        String bookTitle = null;
-
-        if (activity instanceof LectureLog lecture) {
-            instructorName = lecture.getInstructorName();
-        } else if (activity instanceof PracticeLog practice) {
-            completionRate = practice.getCompletionRate();
-        } else if (activity instanceof ReadingLog reading) {
-            bookTitle = reading.getBookTitle();
-        }
 
         return new ActivityResponse(
                 activity.getId(),
@@ -44,8 +34,8 @@ public record ActivityResponse(
                 activity.getMinutes(),
                 activity.getVisibility(),
                 activity.getTags(),
-                instructorName,
-                completionRate,
-                bookTitle);
+                activity.getInstructorName(),
+                activity.getCompletionRate(),
+                activity.getBookTitle());
     }
 }

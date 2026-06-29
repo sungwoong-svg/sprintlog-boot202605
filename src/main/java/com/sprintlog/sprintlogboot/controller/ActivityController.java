@@ -1,12 +1,11 @@
 package com.sprintlog.sprintlogboot.controller;
 
-import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
-import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
+import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -59,7 +58,7 @@ public class ActivityController implements ActivityControllerDocs{
 
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<ActivityResponse>> getById(@PathVariable Long id) {
-        LearningActivity activity = repository.findFirst(a -> a.getId() == id)
+        LearningActivity activity = repository.findById(id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
         return ResponseEntity.ok().body(toModel(activity));
     }
@@ -95,14 +94,14 @@ public class ActivityController implements ActivityControllerDocs{
 
     }
 
-    // -- 생성(POST) / 수정(PUT) / 삭제(DELETE) --
+    // 변경 작업 -- 생성(POST) / 수정(PUT) / 삭제(DELETE) --
     @PostMapping
     public ResponseEntity<EntityModel<ActivityResponse>> create(@Valid @RequestBody CreateActivityRequest request) {
         LearningActivity activity = toActivity(request);
-        repository.add(activity);
+        LearningActivity saved = repository.save(activity);
 
         // 성공 시 201 Created + Location Header(생성된 자원의 주소)를 함께 응답한다.
-        URI location = URI.create("/api/activities/" + activity.getId());
+        URI location = URI.create("/api/activities/" + saved.getId());
         return ResponseEntity.created(location).body(toModel(activity));
     }
 
@@ -112,7 +111,7 @@ public class ActivityController implements ActivityControllerDocs{
     public ResponseEntity<EntityModel<ActivityResponse>> update(@PathVariable Long id,
                                                                 @Valid @RequestBody UpdateActivityRequest request) {
 
-        LearningActivity activity = repository.findFirst(a -> a.getId() == id)
+        LearningActivity activity = repository.findById(id)
                 .orElseThrow(() -> new ActivityNotFoundException(id));
 
         activity.changeTitle(request.title());
@@ -121,7 +120,10 @@ public class ActivityController implements ActivityControllerDocs{
         } else {
             activity.hideFromPublic();
         }
-        repository.update(activity);
+
+        // JPA가 적용된 상태에서의 update는 findById로 조회해 온 Entity를 setter로 변경
+        // 변경 후에 명시적으로 save()를 호출하면 영속성 컨텍스트의 변경 감지(dirty checking)에 의해 update 쿼리가 날아감
+        repository.save(activity);
         return ResponseEntity.ok().body(toModel(activity));
     }
 
@@ -129,9 +131,11 @@ public class ActivityController implements ActivityControllerDocs{
     // 활동 삭제. 성공 시 본문 없이 204 No Content, 대상이 없으면 404.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!repository.removeById(id)) {
+        // existsById: 해당 id에 대한 데이터 존재 여부 확인(true/false 응답)
+        if (!repository.existsById(id)) {
             throw new ActivityNotFoundException(id);
         }
+        repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
@@ -146,18 +150,18 @@ public class ActivityController implements ActivityControllerDocs{
         );
     }
 
+    // 평탄화 후 — 하위 타입 생성 switch 가 사라졌다.
+    //   종류(type)와 종류별 필드를 그대로 단일 생성자에 넘기면 된다(엔티티가 category 로 구분).
     private LearningActivity toActivity(CreateActivityRequest request) {
-        LearningActivity activity = switch (request.type()) {
-            case LECTURE -> new LectureLog(request.title(), request.minutes(), request.visibility(), request.instructorName());
-            case PRACTICE -> new PracticeLog(request.title(), request.minutes(), request.visibility(), request.completionRate());
-            case READING -> new ReadingLog(request.title(), request.minutes(), request.visibility(), request.bookTitle());
-        };
+        LearningActivity activity = new LearningActivity(
+            request.type(), request.title(), request.minutes(), request.visibility(),
+            request.instructorName(), request.completionRate(), request.bookTitle());
 
         if (request.tags() != null) {
             request.tags().forEach(activity::addTag);
         }
-
         return activity;
     }
+
 
 }

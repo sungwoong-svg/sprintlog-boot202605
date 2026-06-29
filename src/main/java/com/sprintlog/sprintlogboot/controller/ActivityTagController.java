@@ -7,7 +7,6 @@ import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -57,7 +56,7 @@ public class ActivityTagController {
     }
 
     private LearningActivity findActivity(Long activityId) {
-        return repository.findFirst(a -> a.getId() == activityId)
+        return repository.findById(activityId)
                 .orElseThrow(() -> new ActivityNotFoundException(activityId));
     }
 
