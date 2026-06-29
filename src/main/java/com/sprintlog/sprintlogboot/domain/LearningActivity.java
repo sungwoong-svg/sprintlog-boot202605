@@ -45,6 +45,9 @@ public class LearningActivity extends BaseEntity {
     @Column(length = 200)
     private String bookTitle; // READING 전용 // 추후 널값 애들은 제이슨이그노어로 리스폰스에서 뺄 예정
 
+    @Column(length = 100)
+    private String attachmentFileName; // 첨부 파일의 파일명(UUID), 필수가 아니기 때문의 널 허용
+
     // 컬렉션 자료형을 별도의 테이블로 매핑. 테이블 이름은 activity_tags, 활동 테이블과 조인할 수 있는 외래 키 이름은 activity_id
     // ElementCollection: 활동 객체를 조회할 때 tag의 조회 방식
     // EAGER: 무조건 tag를 조인해서 끌고옴 / LAZY: 내가 직접 tag를 지목하기 전까진 조회 안됨 / 실무에서는 LAZY 선호 (효율)
@@ -78,6 +81,12 @@ public class LearningActivity extends BaseEntity {
             throw new InvalidActivityException("태그는 비워둘 수 없습니다.");
         }
         tags.add(tag.trim().toLowerCase());
+    }
+
+    // 첨부 파일명을 활동 객체에 추가한다. (평범한 setter)
+    // DB에는 파일명만, 실제 파일은 디스크에 저장
+    public void attachFile(String savedFileName) {
+        this.attachmentFileName = savedFileName;
     }
 
     // 등록된 태그를 제거한다.

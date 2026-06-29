@@ -8,6 +8,12 @@ spring:
   profiles:
     active: dev
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5MB
+      max-request-size: 20MB
+
 server:
   port: 8080
 
@@ -27,3 +33,4 @@ sprintlog:
   sample-data:
     enabled: true
     count: 4
+  file-directory: /Users/apple/Desktop/codeit-13th-develop/sprintlog-boot/attachfile
