@@ -78,7 +78,7 @@ public interface ActivityRepository extends JpaRepository<LearningActivity, Long
   void deleteByTitleAndCategoryWithJPQL(String title, ActivityCategory category);
 
   // 연관은 기본을 LAZY 로딩으로 두고, 정말 필요한 조회에서만 FETCH JOIN이나 EntityGraph를 사용해서
-  // 조인 결과를 함께 들고오는 방식을 선호.
+  // 조인 결과를 함께 들고오는 방식을 선호.인
   @Query("SELECT a FROM LearningActivity a LEFT JOIN FETCH a.owner LEFT JOIN FETCH a.tags")
   List<LearningActivity> findAllFetchJoin();
 

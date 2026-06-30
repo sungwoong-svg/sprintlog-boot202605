@@ -3,6 +3,7 @@ package com.sprintlog.sprintlogboot.controller;
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.dto.response.AuditLogResponse;
 import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
@@ -162,5 +163,20 @@ public class ActivityController implements ActivityControllerDocs{
         return ResponseEntity.ok().body(list);
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<List<AuditLogResponse>> history() {
+        List<AuditLogResponse> list = activityService.history().stream()
+            .map(AuditLogResponse::from)
+            .toList();
+
+        return ResponseEntity.ok().body(list);
+    }
+
+    @PostMapping("/demo-atomic")
+    public ResponseEntity<String> demoAtomic(@RequestParam(defaultValue = "false") boolean fail) {
+        activityService.demoAtomicRegister(fail); // fail = true면 예외를 일부러 발생 -> 롤백
+
+        return ResponseEntity.ok().body("활동과 이력이 한 트랜잭션으로 저장되었습니다.");
+    }
 
 }

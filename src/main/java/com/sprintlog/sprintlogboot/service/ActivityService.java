@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.service;
 
+import com.sprintlog.sprintlogboot.domain.ActivityAuditLog;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.Visibility;
@@ -8,6 +9,7 @@ import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ActivityService {
 
   private final ActivityRepository repository;
+  private final AuditLogRepository auditLogRepository;
 
 
   public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
@@ -124,6 +127,25 @@ public class ActivityService {
   }
 
   public List<LearningActivity> withDetails() {
-    return repository.findAllFetchJoin();
+    return repository.findAllWithDetails();
+  }
+
+  public List<ActivityAuditLog> history() {
+    return auditLogRepository.findAllByOrderByIdDesc();
+  }
+
+  @Transactional
+  public void demoAtomicRegister(boolean fail) {
+    LearningActivity activity = repository.save(new LearningActivity(
+        ActivityCategory.LECTURE, "원자성 데모 학습",
+        30, Visibility.PUBLIC, "이강사",
+        null, null
+    ));
+
+    auditLogRepository.save(new ActivityAuditLog("CREATE", "활동 생성(원자성 데모)" + activity.getTitle()));
+
+    if (fail) {
+      throw new IllegalArgumentException("원자성 시연: 등록 도중 실패 -> 활동, 이력 둘 다 롤백");
+    }
   }
 }
