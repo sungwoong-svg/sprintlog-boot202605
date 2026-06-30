@@ -152,4 +152,15 @@ public class ActivityController implements ActivityControllerDocs{
         List<ActivityResponse> dtoList = activityService.search(category, keyword, minMinutes);
         return ResponseEntity.ok().body(dtoList);
     }
+
+    @GetMapping("/with-details")
+    public ResponseEntity<List<ActivityResponse>> getWithDetails() {
+        List<ActivityResponse> list = activityService.withDetails().stream()
+            .map(ActivityResponse::from)
+            .toList();
+
+        return ResponseEntity.ok().body(list);
+    }
+
+
 }

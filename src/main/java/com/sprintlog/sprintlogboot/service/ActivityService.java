@@ -122,4 +122,8 @@ public class ActivityService {
     Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
     return repository.findByVisibility(visibility, pageable);
   }
+
+  public List<LearningActivity> withDetails() {
+    return repository.findAllFetchJoin();
+  }
 }

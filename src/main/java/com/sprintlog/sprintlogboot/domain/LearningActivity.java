@@ -53,7 +53,7 @@ public class LearningActivity extends BaseEntity {
     // 컬렉션 자료형을 별도의 테이블로 매핑. 테이블 이름은 activity_tags, 활동 테이블과 조인할 수 있는 외래 키 이름은 activity_id
     // ElementCollection: 활동 객체를 조회할 때 tag의 조회 방식
     // EAGER: 무조건 tag를 조인해서 끌고옴 / LAZY: 내가 직접 tag를 지목하기 전까진 조회 안됨 / 실무에서는 LAZY 선호 (효율)
-    @ElementCollection(fetch = FetchType.EAGER)
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "activity_tags", joinColumns = @JoinColumn(name = "activity_id"))
     @Column(name = "tag")
     private Set<String> tags = new HashSet<>();
@@ -63,7 +63,7 @@ public class LearningActivity extends BaseEntity {
     // @ManyToOne을 통해 1:N 관계라는 것을 알려주고, 연관관계의 주인인 activities에게 어떤 유저가 추가한 활동인지에 대한 정보를
     // joinColumn으로 알려주겠다. 이름은 "owner_id"로 설정하겠다. -> 이 값이 곧 외래키(FK)가 된다.
     // 연관관계의 주인: 관계를 저장하거나 변경하는 것이 가능하다.
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     @JsonIgnore
     private User owner;
