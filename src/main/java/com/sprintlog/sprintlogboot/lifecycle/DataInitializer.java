@@ -39,37 +39,26 @@ public class DataInitializer {
         log.info("[lifecycle] @PostConstruct — DataInitializer 가 샘플 데이터를 적재합니다.");
         if (userRepository.count() == 0) {
             User choon = new User("김춘식", "choon@naver.com");
+            LearningActivity l1 = new LearningActivity(
+                ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null);
+            LearningActivity l2 = new LearningActivity(
+                ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null);
+            choon.getActivities().add(l1);
+            choon.getActivities().add(l2);
             userRepository.save(choon);
+
+
             User hong = new User("홍길동", "hong@gmail.com");
+            LearningActivity l3 = new LearningActivity(
+                ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판");
+            LearningActivity l4 = new LearningActivity(
+                ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null);
+            hong.getActivities().add(l3);
+            hong.getActivities().add(l4);
+
             User saved = userRepository.save(hong);
             log.info("[lifecycle] User 저장 완료 - saved id={}, createdAt={}"
                 , saved.getId(), saved.getCreatedAt());
-
-
-            LearningActivity l1 = new LearningActivity(
-                ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null);
-            l1.assignOwner(choon);
-            repository.save(l1);
-            LearningActivity l2 = new LearningActivity(
-                ActivityCategory.PRACTICE, "@PostConstruct 실습", 60, Visibility.PUBLIC, null, 85, null);
-            l2.assignOwner(choon);
-            repository.save(l2);
-
-            LearningActivity l3 = new LearningActivity(
-                ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판");
-            l3.assignOwner(hong);
-            repository.save(l3);
-            LearningActivity l4 = new LearningActivity(
-                ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null);
-            l4.assignOwner(hong);
-            repository.save(l4);
-
-            for (int i = 1; i < 123 ; i++) {
-                LearningActivity activity = new LearningActivity(
-                    ActivityCategory.LECTURE, "test" + i, 60, Visibility.PUBLIC, "test" + i, null, null);
-                activity.assignOwner(choon);
-                repository.save(activity);
-            }
 
         }
 
