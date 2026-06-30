@@ -63,6 +63,14 @@ public class DataInitializer {
                 ActivityCategory.LECTURE, "Prototype vs Singleton", 45, Visibility.PRIVATE, "이강사", null, null);
             l4.assignOwner(hong);
             repository.save(l4);
+
+            for (int i = 1; i < 123 ; i++) {
+                LearningActivity activity = new LearningActivity(
+                    ActivityCategory.LECTURE, "test" + i, 60, Visibility.PUBLIC, "test" + i, null, null);
+                activity.assignOwner(choon);
+                repository.save(activity);
+            }
+
         }
 
 

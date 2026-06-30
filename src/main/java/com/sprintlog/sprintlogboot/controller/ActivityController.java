@@ -3,9 +3,9 @@ package com.sprintlog.sprintlogboot.controller;
 import com.sprintlog.sprintlogboot.domain.*;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
-import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
+import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
-import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileService;
@@ -13,12 +13,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,18 +39,41 @@ public class ActivityController implements ActivityControllerDocs{
 
     // 모든 활동 목록(페이징)
     @GetMapping
-    public ResponseEntity<List<EntityModel<ActivityResponse>>> getAll(
+    public ResponseEntity<PagedResponse<ActivityResponse>> getAll(
             @RequestParam(defaultValue = "id") String sort,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Long ownerId
     ) {
-        List<EntityModel<ActivityResponse>> list = activityService.list(sort, page, size, ownerId)
-            .stream()
-            .map(a -> toModel(a))
+        Page<LearningActivity> result
+            = activityService.page(sort, page, size, ownerId);
+
+        // 원본 리스트를 꺼낼 때는 getContent()를 통해서 꺼낼 수 있다.
+        List<ActivityResponse> content = result.getContent().stream()
+            .map(a -> ActivityResponse.from(a))
             .toList();
 
-        return ResponseEntity.ok().body(list);
+        return ResponseEntity.ok().body(new PagedResponse<>(
+                content,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages())
+            );
+    }
+    @GetMapping("/slice")
+    public ResponseEntity<SliceResponse<ActivityResponse>> slice(
+        @RequestParam(defaultValue = "PUBLIC") Visibility visibility,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        Slice<LearningActivity> result = activityService.sliceByVisibility(visibility, page, size);
+        List<ActivityResponse> content = result.getContent().stream()
+            .map(a -> ActivityResponse.from(a))
+            .toList();
+
+        return ResponseEntity.ok().body(
+            new SliceResponse<>(content, result.getNumber(), result.getSize(), result.hasNext()));
     }
 
     @GetMapping("/{id}")

@@ -5,6 +5,7 @@ import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +33,7 @@ public interface ActivityControllerDocs {
     @Operation(summary = "활동 목록 조회", description = "정렬(sort), 페이지(page), 크기(size), 쿼리 파라미터로 활동 목록을 가볍게(요약) 반환한다.")
     @ApiResponse(responseCode = "200", description = "조회 성공(요약 목록)")
     @GetMapping
-    public ResponseEntity<List<EntityModel<ActivityResponse>>> getAll(
+    public ResponseEntity<PagedResponse<ActivityResponse>> getAll(
             @Parameter(description = "정렬 기준", example = "id", schema = @Schema(allowableValues = {"id", "minutes", "title"}))
             @RequestParam(defaultValue = "id") String sort,
             @Parameter(description = "페이지 번호(0부터 시작)", example = "0")

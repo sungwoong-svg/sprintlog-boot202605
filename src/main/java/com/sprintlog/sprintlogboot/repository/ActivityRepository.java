@@ -2,9 +2,13 @@ package com.sprintlog.sprintlogboot.repository;
 
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +22,13 @@ public interface ActivityRepository extends JpaRepository<LearningActivity, Long
   // 이런 경우에는 직접 메서드를 선언해 주셔야 합니다. (쿼리 메서드, JPQL 사용 등)
   // findByOwnerId: 'where owner_id = ?' 쿼리로 자동 생성
   List<LearningActivity> findByOwnerId(Long ownerId);
+
+  // 우리가 직접 작성한 쿼리 메서드도 페이징 처리가 가능합니다.
+  // 정렬, 페이지 자르기, 전체 개수를 포함한 Page 객체를 리턴하게 하면 된다.
+  Page<LearningActivity> findByOwnerId(Long ownerId, Pageable pageable);
+
+  // Slice: 더보기 or 무한스크롤 페이징에서 사용하는 객체. 전체 개수 count 쿼리 없이 다음 페이지 유무만 앏니다.(Page보다 가벼움)
+  Slice<LearningActivity> findByVisibility(Visibility visibility, Pageable pageable);
 
   Optional<LearningActivity> findByTitle(String title);
 
@@ -65,4 +76,5 @@ public interface ActivityRepository extends JpaRepository<LearningActivity, Long
   @Query("DELETE FROM LearningActivity a WHERE a.title = ?1 AND a.category = ?2")
   void deleteByTitleAndCategoryWithJPQL(String title, ActivityCategory category);
 
+  Long owner(User owner);
 }
