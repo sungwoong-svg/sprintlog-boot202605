@@ -1,4 +1,4 @@
-package com.sprintlog.sprintlogboot.dto.request;
+package com.sprintlog.sprintlogboot.dto.response;
 
 import java.util.List;
 

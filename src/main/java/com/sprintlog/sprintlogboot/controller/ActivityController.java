@@ -7,6 +7,7 @@ import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
+import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,9 +32,9 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 @RequestMapping({"/api/v1/activities", "/api/activities"}) // 경로를 둘로 받아서 기존의 요청도 해결할 수 있도록.
 public class ActivityController implements ActivityControllerDocs{
 
-    private final ActivityRepository repository;
     private final ActivityDashboard dashboard;
     private final FileService fileService;
+    private final ActivityService activityService;
 
     // 모든 활동 목록(페이징)
     @GetMapping
@@ -43,30 +44,17 @@ public class ActivityController implements ActivityControllerDocs{
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Long ownerId
     ) {
-        Comparator<LearningActivity> comparator = switch (sort) {
-            case "minutes" -> Comparator.comparingInt(LearningActivity::getMinutes);
-            case "title" -> Comparator.comparing(LearningActivity::getTitle);
-            default -> Comparator.comparing(LearningActivity::getId);
-        };
-
-        List<LearningActivity> source =
-            (ownerId != null) ? repository.findByOwnerId(ownerId) : repository.findAll();
-
-        List<EntityModel<ActivityResponse>> list = source.stream()
-                .sorted(comparator)
-                .skip((long) page * size) // 0페이지면 0개 건너뛰고 size개, 1페이지면 size개 건너뛰고 size개
-                .limit(size) // 이 줄까지 같이 봐야함 / 1페이지면 0 * 10이라 0개 / 그래서 0페이지면 0개 건너뛰고 10개, 1페이지면 10개 건너뛰고 10개.
-                .map(this::toModel)
-                .toList();
+        List<EntityModel<ActivityResponse>> list = activityService.list(sort, page, size, ownerId)
+            .stream()
+            .map(a -> toModel(a))
+            .toList();
 
         return ResponseEntity.ok().body(list);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<EntityModel<ActivityResponse>> getById(@PathVariable Long id) {
-        LearningActivity activity = repository.findById(id)
-                .orElseThrow(() -> new ActivityNotFoundException(id));
-        return ResponseEntity.ok().body(toModel(activity));
+        return ResponseEntity.ok().body(toModel(activityService.get(id)));
     }
 
     // 카테고리 별로 그룹화된 활동 목록
@@ -82,42 +70,25 @@ public class ActivityController implements ActivityControllerDocs{
         return ResponseEntity.ok().body(dashboard.summarize());
     }
 
-    // 태그로 활동을 필터링
-    @GetMapping("/search")
-    public ResponseEntity<List<LearningActivity>> searchByTag(@RequestParam String tag,
-                                                              @RequestParam String name,
-                                                              @RequestParam int age) {
-
-        log.info("tag: {}, name: {}, age: {}", tag, name, age);
-
-        List<LearningActivity> list = dashboard.filterByTag(tag);
-        return ResponseEntity.ok()
-                .header("Deprecation", "true")
-                .header("Sunset", "Thu, 31 Dec 2026 23:59:59 GMT")
-                .header("Link",
-                        "<https://docs.sprintlog.example/guides/migration#search>; rel=\"deprecation\"")
-                .body(list);
-
-    }
-
+    // --------------------------------------------------------------------------------
     // 변경 작업 -- 생성(POST) / 수정(PUT) / 삭제(DELETE) --
     @PostMapping
     public ResponseEntity<EntityModel<ActivityResponse>> create(
             @Valid @RequestPart("data") CreateActivityRequest request,
             @RequestPart(value = "file", required = false) MultipartFile file
     ) {
-        LearningActivity activity = toActivity(request);
+
+        String savedFileName = null;
 
         if (file != null && !file.isEmpty()) {
-            String savedFileName = fileService.saveFile(file);
-            activity.attachFile(savedFileName);
+            savedFileName = fileService.saveFile(file);
         }
 
-        LearningActivity saved = repository.save(activity);
+        LearningActivity saved = activityService.create(request, savedFileName);
 
         // 성공 시 201 Created + Location Header(생성된 자원의 주소)를 함께 응답한다.
         URI location = URI.create("/api/activities/" + saved.getId());
-        return ResponseEntity.created(location).body(toModel(activity));
+        return ResponseEntity.created(location).body(toModel(saved));
     }
 
     // 활동 수정, 자원 식별은 Path(/{id}), 변경할 내용은 본문(UpdateActivityRequest)
@@ -125,36 +96,19 @@ public class ActivityController implements ActivityControllerDocs{
     @PutMapping("/{id}") // 패치지만 리엑트때문에 풋으로 변경
     public ResponseEntity<EntityModel<ActivityResponse>> update(@PathVariable Long id,
                                                                 @Valid @RequestBody UpdateActivityRequest request) {
-
-        LearningActivity activity = repository.findById(id)
-                .orElseThrow(() -> new ActivityNotFoundException(id));
-
-        activity.changeTitle(request.title());
-        if (request.visibility() == Visibility.PUBLIC) {
-            activity.openToPublic();
-        } else {
-            activity.hideFromPublic();
-        }
-
-        // JPA가 적용된 상태에서의 update는 findById로 조회해 온 Entity를 setter로 변경
-        // 변경 후에 명시적으로 save()를 호출하면 영속성 컨텍스트의 변경 감지(dirty checking)에 의해 update 쿼리가 날아감
-        repository.save(activity);
-        return ResponseEntity.ok().body(toModel(activity));
+        return ResponseEntity.ok()
+            .body(toModel(activityService.update(id, request)));
     }
 
 
     // 활동 삭제. 성공 시 본문 없이 204 No Content, 대상이 없으면 404.
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        // existsById: 해당 id에 대한 데이터 존재 여부 확인(true/false 응답)
-        if (!repository.existsById(id)) {
-            throw new ActivityNotFoundException(id);
-        }
-        repository.deleteById(id);
+        activityService.delete(id);
         return ResponseEntity.noContent().build();
     }
 
-    // --- 응답 DTO + HATEOAS 링크 만들기 ---
+    // --- 응답 DTO + HATEOAS 링크 만들기 (필수 아님) ---
     private EntityModel<ActivityResponse> toModel(LearningActivity activity) {
         long id = activity.getId();
         return EntityModel.of(
@@ -165,18 +119,13 @@ public class ActivityController implements ActivityControllerDocs{
         );
     }
 
-    // 평탄화 후 — 하위 타입 생성 switch 가 사라졌다.
-    //   종류(type)와 종류별 필드를 그대로 단일 생성자에 넘기면 된다(엔티티가 category 로 구분).
-    private LearningActivity toActivity(CreateActivityRequest request) {
-        LearningActivity activity = new LearningActivity(
-            request.type(), request.title(), request.minutes(), request.visibility(),
-            request.instructorName(), request.completionRate(), request.bookTitle());
-
-        if (request.tags() != null) {
-            request.tags().forEach(activity::addTag);
-        }
-        return activity;
+    @GetMapping("/find")
+    public ResponseEntity<List<ActivityResponse>> find(
+        @RequestParam(required = false) ActivityCategory category,
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) Integer minMinutes
+    ) {
+        List<ActivityResponse> dtoList = activityService.search(category, keyword, minMinutes);
+        return ResponseEntity.ok().body(dtoList);
     }
-
-
 }
