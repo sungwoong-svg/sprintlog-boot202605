@@ -1,5 +1,14 @@
 # 개발 환경 (dev profile) 추가 설정
 # application.yml의 값들을 덮어쓰거나 보강
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sprintlog
+    username: sprintlog
+    password: sprintlog
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
 
 sprintlog:
   welcome-message: "SprintLog Boot - PRODUCTION (운영 환경)"
