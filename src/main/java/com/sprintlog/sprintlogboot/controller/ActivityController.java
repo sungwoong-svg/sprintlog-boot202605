@@ -7,6 +7,7 @@ import com.sprintlog.sprintlogboot.dto.response.AuditLogResponse;
 import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
+import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileService;
@@ -177,6 +178,26 @@ public class ActivityController implements ActivityControllerDocs{
         activityService.demoAtomicRegister(fail); // fail = true면 예외를 일부러 발생 -> 롤백
 
         return ResponseEntity.ok().body("활동과 이력이 한 트랜잭션으로 저장되었습니다.");
+    }
+
+    // 트랜잭션 원자성 시연 = 활동 등록 (활동 저장 + 이력 기록)을 한 트랜잭션
+    @PostMapping("/demo-propagation")
+    public ResponseEntity<String> demoPropagation(@RequestParam(defaultValue = "false") boolean fail) {
+        activityService.demoPropagation(fail); // fail = true면 예외를 일부러 발생 -> 롤백
+
+        return ResponseEntity.ok().body("활동 등록을 시도했습니다. (시도 이력은 별도 트랜잭션으로 남습니다.)");
+    }
+
+    @PostMapping("/demo-rollback-default")
+    public ResponseEntity<String> demoRollbackDefault(
+        @RequestParam(defaultValue = "false") boolean fail) {
+        try {
+            activityService.archive(fail);
+            return ResponseEntity.ok("정상 보관 완료 (fail=false)");
+        } catch (ActivityArchiveException e) {
+            // 체크 예외를 여기서 받았지만 — 트랜잭션은 *이미 커밋* 되어 활동은 남아 있다.
+            return ResponseEntity.ok("체크 예외 발생했지만 기본 롤백 안 됨 → 활동 남음!: " + e.getMessage());
+        }
     }
 
 }

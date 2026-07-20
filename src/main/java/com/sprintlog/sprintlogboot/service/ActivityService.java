@@ -7,6 +7,7 @@ import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
@@ -24,12 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true) // 클래스 레벨에 설정하면 전역으로 설정
 public class ActivityService {
 
   private final ActivityRepository repository;
   private final AuditLogRepository auditLogRepository;
+  private final AuditService auditService;
 
 
+  @Transactional(readOnly = true)
   public List<ActivityResponse> search(ActivityCategory category, String keyword, Integer minMinutes) {
 
     if (category != null) {
@@ -52,7 +56,7 @@ public class ActivityService {
 
   }
 
-
+  @Transactional(readOnly = true)
   public Page<LearningActivity> page(String sort, int page, int size, Long ownerId) {
     // 기존에는 정렬 기준을 Comparator로 지정했는데, JPA에서 제공하는 페이징 기능을 사용하기 위해
     // Sort 타입으로 정렬 기준을 지정
@@ -95,7 +99,7 @@ public class ActivityService {
     return activity;
   }
 
-  @Transactional
+  @Transactional // 메서드 레벨이 트랜잭션을 걸면 클래스 레벨보다 우선시 된다.
   public LearningActivity update(Long id, UpdateActivityRequest request) {
     LearningActivity activity = repository.findById(id)
         .orElseThrow(() -> new ActivityNotFoundException(id));
@@ -147,5 +151,32 @@ public class ActivityService {
     if (fail) {
       throw new IllegalArgumentException("원자성 시연: 등록 도중 실패 -> 활동, 이력 둘 다 롤백");
     }
+  }
+
+  @Transactional // REQUIRED 기본값이라 미기재
+  public void demoPropagation(boolean fail) {
+    // ① 시도 이력 — REQUIRES_NEW(별도 빈 호출 → 프록시 경유 → 독립 트랜잭션으로 즉시 커밋)
+    auditService.logAttempt("CREATE_ATTEMPT", "활동 등록 시도(전파 데모)");
+
+    // ② 본 작업 — 부모 트랜잭션에서 활동 저장
+    repository.save(new LearningActivity(
+        ActivityCategory.LECTURE, "전파 데모 학습", 30, Visibility.PUBLIC, "이강사", null, null));
+
+    // ③ 실패하면 부모만 롤백 — 위 시도 이력(①)은 이미 커밋되어 살아남는다.
+    if (fail) {
+      throw new IllegalStateException("전파 시연: 등록 실패 → 활동은 롤백, 시도 이력은 남음(REQUIRES_NEW)");
+    }
+  }
+
+  @Transactional(rollbackFor = ActivityArchiveException.class)
+  public void archive(boolean fail) throws ActivityArchiveException {
+    repository.save(new LearningActivity(
+        ActivityCategory.READING, "보관 시연 활동(rollbackFor 없음)", 20, Visibility.PUBLIC, null, null, "보관용 책"));
+
+    if (fail) {
+      // 체크 예외 — 기본 롤백 대상이 아니다 → 위 저장은 커밋되어 남는다.
+      throw new ActivityArchiveException("보관 실패(체크 예외) — 하지만 기본 롤백은 안 된다");
+    }
+
   }
 }

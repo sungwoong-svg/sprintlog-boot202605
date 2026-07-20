@@ -1,9 +1,9 @@
 package com.sprintlog.sprintlogboot.exception;
 
-public class InvalidActivityException extends RuntimeException{
+public class InvalidActivityException extends BusinessException{
 
     public InvalidActivityException(String message) {
-        super(message);
+        super(ErrorCode.INVALID_ACTIVITY_INPUT, message);
     }
 
 }
