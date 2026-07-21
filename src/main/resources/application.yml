@@ -1,6 +1,24 @@
 # SprintLog Boot의 기본 설정 파일
 # Spring Boot가 초기화 될 때 항상 이 파일을 읽는다.
 
+info:
+  app:
+    name: SprintLog
+    description: 학습 기록 서비스
+    version: 1.0.0
+    encoding: UTF-8
+    java-version: 17
+
+  company:
+    name: MyCompany
+    email: support@mycompany.com
+    website: https://mycompany.com
+
+  team:
+    developer: Backend Team
+    manager: John Doe
+    contact: backend-team@mycompany.com
+
 spring:
   application:
     name: sprintlog-boot
@@ -27,6 +45,9 @@ management:
   endpoint:
     health:
       show-details: always # 개발 환경에서는 always, 운영에서는 when_authorized(허가된 사람만 요청이 가능하도록)를 주고 사용한다.
+  info:
+    env:
+      enabled: true
   server:
     port: 9090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
 
