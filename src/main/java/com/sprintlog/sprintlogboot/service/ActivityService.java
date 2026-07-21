@@ -80,10 +80,13 @@ public class ActivityService {
         .orElseThrow(() -> new ActivityNotFoundException(id));
   }
 
+  @Transactional
   public LearningActivity create(CreateActivityRequest request, String savedFileName) {
     LearningActivity activity = toActivity(request);
     activity.attachFile(savedFileName);
-    return repository.save(activity);
+    LearningActivity saved = repository.save(activity);
+    log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
+    return saved;
   }
 
   // 평탄화 후 — 하위 타입 생성 switch 가 사라졌다.
@@ -113,7 +116,9 @@ public class ActivityService {
 
     // JPA가 적용된 상태에서의 update는 findById로 조회해 온 Entity를 setter로 변경
     // 변경 후에 명시적으로 save()를 호출하면 영속성 컨텍스트의 변경 감지(dirty checking)에 의해 update 쿼리가 날아감
-    return repository.save(activity);
+    LearningActivity saved = repository.save(activity);
+    log.info("활동 생성 완료 id={}", saved.getId());
+    return saved;
   }
 
   @Transactional
@@ -123,6 +128,7 @@ public class ActivityService {
       throw new ActivityNotFoundException(id);
     }
     repository.deleteById(id);
+    log.info("활동 삭제가 완료 id={}", id);
   }
 
   public Slice<LearningActivity> sliceByVisibility(Visibility visibility, int page, int size) {
