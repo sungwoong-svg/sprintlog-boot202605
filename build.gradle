@@ -32,6 +32,9 @@ dependencies {
     // 구현체 Hibernate가 포함되어 있습니다.
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
+    // actuator - 애플리케이션 모니터링(상태, 정보, 지표)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     // [신규] Lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

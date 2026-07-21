@@ -17,6 +17,19 @@ spring:
 server:
   port: 8080
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics # 꼭 필요한 정보만 노출 # include 중 env는 제외해야함(db, pw, api secret key 등)
+      base-path: /management # 경로도 바꿔서 숨김
+
+  endpoint:
+    health:
+      show-details: always # 개발 환경에서는 always, 운영에서는 when_authorized(허가된 사람만 요청이 가능하도록)를 주고 사용한다.
+  server:
+    port: 9090 # Actuator 전용 포트 (방화벽 같은데에서 Actuator는 허용된 ip만 접근이 가능하도록 막음)
+
 springdoc:
   swagger-ui:
     path: /api-docs-ui.html # UI page 경로
