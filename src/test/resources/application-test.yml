@@ -25,3 +25,6 @@ logging:
   level:
     root: INFO
     com.sprintlog: DEBUG # 우리 패키지만 상세히
+
+sprintlog:
+  file-directory: ./build/test-uploads
