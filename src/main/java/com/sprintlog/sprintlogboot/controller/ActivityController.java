@@ -1,11 +1,16 @@
 package com.sprintlog.sprintlogboot.controller;
 
-import com.sprintlog.sprintlogboot.domain.*;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
+import com.sprintlog.sprintlogboot.domain.ActivityCategory;
+import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.Visibility;
+import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
 import com.sprintlog.sprintlogboot.dto.response.AuditLogResponse;
 import com.sprintlog.sprintlogboot.dto.response.PagedResponse;
-import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
@@ -13,20 +18,27 @@ import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import java.io.Serializable;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 @Tag(name = "활동(Activity)", description = "학습 활동 조회, 생성, 수정, 삭제 API")
 @Slf4j
@@ -178,6 +190,15 @@ public class ActivityController implements ActivityControllerDocs{
         activityService.demoAtomicRegister(fail); // fail = true면 예외를 일부러 발생 -> 롤백
 
         return ResponseEntity.ok().body("활동과 이력이 한 트랜잭션으로 저장되었습니다.");
+    }
+
+    @GetMapping("/achievement")
+    public ResponseEntity<Map<String, Serializable>> achievement(@RequestParam int goalMinutes) {
+        if (goalMinutes <= 0) {
+            throw new IllegalArgumentException("주간 목표 시간은 1분 이상이어야 합니다.");
+        }
+        int rate = dashboard.achievementRate(goalMinutes);
+        return ResponseEntity.ok().body(Map.of("goalMinutes", goalMinutes, "achievementRate", rate + "%"));
     }
 
     // 트랜잭션 원자성 시연 = 활동 등록 (활동 저장 + 이력 기록)을 한 트랜잭션

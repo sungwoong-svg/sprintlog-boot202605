@@ -3,11 +3,17 @@ package com.sprintlog.sprintlogboot.service;
 import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.*;
 
 @Service // 빈 등록 어노테이션, @Component랑 기능은 똑같고, 계층을 좀 더 명시적으로 표기
 @RequiredArgsConstructor // final로 선언된 필드만 받는 생성자를 자동으로 만들어 줌.
@@ -123,6 +129,15 @@ public class ActivityDashboard {
             }
         }
         return Collections.unmodifiableList(result);
+    }
+
+    public int achievementRate(int goalMinutes) {
+        WeeklyGoal goal = new WeeklyGoal(goalMinutes);
+        int studied = 0;
+        for (LearningActivity activity : repository.findAll()) {
+            studied += activity.getMinutes();
+        }
+        return goal.achievementRate(studied);
     }
 
 }
