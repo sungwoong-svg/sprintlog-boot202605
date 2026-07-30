@@ -74,7 +74,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleNoResource(NoResourceFoundException e) {
         log.warn("없는 경로 요청: {}", e.getResourcePath());
         return problem(HttpStatus.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND.getCode(),
-            "요청하신 경로를 찾을 수 없습니다.", "경로 없음");
+            "요청하신 경로를 찾을 수 없습니다!", "경로 없음");
     }
 
     // 400 — 경로 변수·쿼리 파라미터의 타입 불일치(예: /activities/abc). 프레임워크 예외 → C001
