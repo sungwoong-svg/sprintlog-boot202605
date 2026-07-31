@@ -15,7 +15,7 @@ import com.sprintlog.sprintlogboot.dto.response.SliceResponse;
 import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.ActivityService;
-import com.sprintlog.sprintlogboot.service.FileService;
+import com.sprintlog.sprintlogboot.service.FileStorage;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.io.Serializable;
@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,7 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class ActivityController implements ActivityControllerDocs{
 
     private final ActivityDashboard dashboard;
-    private final FileService fileService;
+    private final FileStorage fileService;
     private final ActivityService activityService;
 
     // 모든 활동 목록(페이징)
@@ -127,6 +128,33 @@ public class ActivityController implements ActivityControllerDocs{
         // 성공 시 201 Created + Location Header(생성된 자원의 주소)를 함께 응답한다.
         URI location = URI.create("/api/activities/" + saved.getId());
         return ResponseEntity.created(location).body(toModel(saved));
+    }
+
+    // 활동의 첨부 파일 보기. 우리 서버가 S3로부터 받은 임시 url을 302로 응답한다.
+    // 클라이언트 측에서 status를 보고 S3에서 다운로드한다.
+    @GetMapping("/{id}attachment")
+    public ResponseEntity<Void> attachment(@PathVariable Long id) {
+        LearningActivity activity = activityService.get(id);
+        String storedName = activity.getAttachmentFileName();
+        if (storedName == null || storedName.isBlank()) {
+            return ResponseEntity.notFound().build(); // 첨부 파일이 없는 활동
+        }
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(fileService.getFileUrl(storedName)))
+            .build();
+    }
+
+    // 첨부파일 다운로드 요청. 이것도 S3으로부터 전달 받은 임시 url을 302로 응답
+    @GetMapping("/{id}attachment/download")
+    public ResponseEntity<Void> downloadAttachment(@PathVariable Long id) {
+        LearningActivity activity = activityService.get(id);
+        String storedName = activity.getAttachmentFileName();
+        if (storedName == null || storedName.isBlank()) {
+            return ResponseEntity.notFound().build(); // 첨부 파일이 없는 활동
+        }
+        return ResponseEntity.status(HttpStatus.FOUND)
+            .location(URI.create(fileService.getDownloadUrl(storedName)))
+            .build();
     }
 
     // 활동 수정, 자원 식별은 Path(/{id}), 변경할 내용은 본문(UpdateActivityRequest)
