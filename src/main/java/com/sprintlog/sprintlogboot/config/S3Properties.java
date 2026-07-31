@@ -6,11 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties("sprint.log.s3")
+@ConfigurationProperties(prefix = "sprintlog.s3")
 public class S3Properties {
 
   /** 버킷 이름. */
-  private String bucket = "sprintlog-uploads";
+  private String bucket = "sprintlog-uploads-7569";
 
   /** 리전(예: ap-northeast-2 서울). */
   private String region = "ap-northeast-2";

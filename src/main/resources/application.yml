@@ -71,7 +71,7 @@ sprintlog:
 
   storage: s3
   s3:
-    bucket-name: sprintlog-uploads-7569
+    bucket: sprintlog-uploads-7569
     region: ap-northeast-2
     endpoint:
     presign-minutes: 5
