@@ -8,6 +8,11 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
     password: ${SPRING_DATASOURCE_PASSWORD:secret}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10 # (CPU 코어 수 x 2) + 유효 디스크 수
+      connection-timeout: 10000 # 10초
+      max-lifetime: 1740000 # 커넥션 객체의 최대 수명을 지정: 29분
+      keepalive-time: 300000 # 풀 안에서 놀고 있는(유휴) 커넥션에게 주기적으로 health check를 보내는 간격
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:validate} # 운영 환경에서는 validate 추천.
@@ -19,7 +24,15 @@ sprintlog:
     count: 4
   file-directory: ${SPRINTLOG_FILE_DIR:/app/uploads} # 컨테이너 안 경로 (호스트 절대 경로 대신)
 
+  storage: ${SPRINTLOG_STORAGE:s3}
+  s3:
+    bucket: ${SPRINTLOG_S3_BUCKET:sprintlog-uploads-8917}
+    region: ${AWS_REGION:ap-northeast-2}
+    endpoint: ${SPRINTLOG_S3_ENDPOINT:}
+    presign-minutes: ${SPRINTLOG_s3_PRESIGN_MINUTES:5}
+
 # 개발 시에는 자세한 로그가 도움됨.
 logging:
   level:
+    root: info
     com.sprintlog: warn

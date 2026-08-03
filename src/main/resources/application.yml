@@ -24,7 +24,7 @@ spring:
     name: sprintlog-boot
 
   profiles:
-    active: dev
+    active: prod
 
   servlet:
     multipart:
@@ -69,9 +69,3 @@ sprintlog:
     count: 4
   file-directory: /Users/apple/Desktop/codeit-13th-develop/sprintlog-boot/attachfile
 
-  storage: s3
-  s3:
-    bucket: sprintlog-uploads-7569
-    region: ap-northeast-2
-    endpoint:
-    presign-minutes: 5

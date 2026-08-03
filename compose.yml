@@ -7,12 +7,12 @@ services: # 실행할 여러 컨테이너들을 정의
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: sprintlog
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d sprintlog"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -28,9 +28,9 @@ services: # 실행할 여러 컨테이너들을 정의
       - "8080:8080"
       - "9090:9090"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/sprintlog # db = 서비스 이름
-      - SPRING_DATASOURCE_PASSWORD=secret
-      - JPA_DDL_AUTO=update
+      - SPRING_DATASOURCE_URL=${SPRING_DATASOURCE_URL} # db = 서비스 이름
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
+      - JPA_DDL_AUTO=${JPA_DDL_AUTO:-validate} # 미설정 시 기본값 validate
       # JVM 메모리 설정
       - JAVA_OPTS=-Xmx1024m -Xms200m
     depends_on: # 서비스 시작 순서 제어
