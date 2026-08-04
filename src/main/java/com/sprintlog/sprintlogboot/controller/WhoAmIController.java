@@ -9,7 +9,7 @@ public class WhoAmIController {
 
   @GetMapping("/whoami")
   public Map<String, String> whoami() {
-    return Map.of("host", System.getenv().getOrDefault("HOSTNAME", "unknown"));
+    return Map.of("host", System.getenv().getOrDefault("test", "test"));
   }
 
 }
