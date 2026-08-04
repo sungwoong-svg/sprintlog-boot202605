@@ -54,7 +54,7 @@ public class ActivityE2ETest {
   private String base; // 공통 기본 url을 담아놓을 용도
 
   // build 폴더 아래에 폴더를 세팅하면 gitignore 대상이고, gradle clean 할 때 알아서 지워진다.
-  static final Path uploadDir = Paths.get("./build/test-upload");
+  static final Path uploadDir = Paths.get("./build/test-uploads");
 
 
   @BeforeEach

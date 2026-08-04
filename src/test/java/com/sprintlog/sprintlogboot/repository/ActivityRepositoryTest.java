@@ -16,12 +16,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 //@SpringBootTest 내가 등록한, Spring Boot에서 사용하는 모든 빈들이 로딩되어 컨테이너에 세팅됨
 @DataJpaTest // JPA 계층 관련 빈만 로딩(Service, Controller, Component는 로딩되지 않음)
 @TestPropertySource(properties = {
     "spring.jpa.properties.hibernate.generate_statistics=true"})
+@ActiveProfiles("test")
 class ActivityRepositoryTest {
 
   @Autowired // 테스트 환경에서는 생성자 의존성 주입을 사용할 수 없어서 @Autowired로 직접 주입해 주세요.
