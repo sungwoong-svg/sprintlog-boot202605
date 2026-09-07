@@ -1,5 +1,7 @@
 package com.sprintlog.sprintlogboot.config;
 
+import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
+import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 // 이 클래스는 외우는 게 아니라 나중에 가져가서 설정 값만 조금씩 바꾸면 됨
 @Configuration
@@ -28,7 +31,9 @@ public class SecurityConfig {
           // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
           .authorizeHttpRequests(auth -> auth
               .anyRequest().permitAll()
-          );
+          )
+          .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)
+          .addFilterAfter(new RequestLoggingFilter(), RequestIdFilter.class);
     return http.build();
   }
 
