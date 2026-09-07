@@ -58,7 +58,7 @@ public class DataInitializer {
             userRepository.save(choon);
 
 
-            User hong = new User("홍길동", "hong@gmail.com");
+            User hong = new User("홍길동", "hong@gmail.com", passwordEncoder.encode("hong123"));
             LearningActivity l3 = new LearningActivity(
                 ActivityCategory.READING, "스프링 인 액션", 75, Visibility.PUBLIC, null, null, "스프링 인 액션 5판");
             LearningActivity l4 = new LearningActivity(

@@ -115,7 +115,7 @@ class ActivityControllerTest {
     @Test
     @DisplayName("data 만 보내도 201 + Location (file 은 선택)")
     void 정상이면_201() throws Exception {
-      given(service.create(any(), any())).willReturn(sample);
+      given(service.create(any(), any(), authentication.getName())).willReturn(sample);
 
       MockMultipartFile data = new MockMultipartFile("data", "data.json",
           MediaType.APPLICATION_JSON_VALUE,
@@ -134,7 +134,7 @@ class ActivityControllerTest {
     @Test
     @DisplayName("data + file 이면 201, 파일은 FileService로 저장된다.")
     void 파일첨부_201() throws Exception {
-      given(service.create(any(), any())).willReturn(sample);
+      given(service.create(any(), any(), authentication.getName())).willReturn(sample);
       given(fileService.saveFile(any())).willReturn("saved-uuid.png"); // 저장했다 치고 파일명 반환
 
       MockMultipartFile data = new MockMultipartFile("data", "data.json",
@@ -170,7 +170,7 @@ class ActivityControllerTest {
           .andExpect(jsonPath("$.code").value("C001"))
           .andExpect(jsonPath("$.errors").exists());
 
-      verify(service, never()).create(any(), any());   // 파일이 없으면 저장도 안 함
+      verify(service, never()).create(any(), any(), authentication.getName());   // 파일이 없으면 저장도 안 함
     }
   }
   

@@ -29,6 +29,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -114,7 +115,8 @@ public class ActivityController implements ActivityControllerDocs{
     @PostMapping
     public ResponseEntity<EntityModel<ActivityResponse>> create(
             @Valid @RequestPart("data") CreateActivityRequest request,
-            @RequestPart(value = "file", required = false) MultipartFile file
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            Authentication authentication
     ) {
 
         String savedFileName = null;
@@ -123,7 +125,7 @@ public class ActivityController implements ActivityControllerDocs{
             savedFileName = fileService.saveFile(file);
         }
 
-        LearningActivity saved = activityService.create(request, savedFileName);
+        LearningActivity saved = activityService.create(request, savedFileName, authentication.getName());
 
         // 성공 시 201 Created + Location Header(생성된 자원의 주소)를 함께 응답한다.
         URI location = URI.create("/api/activities/" + saved.getId());

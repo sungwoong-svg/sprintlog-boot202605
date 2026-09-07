@@ -193,7 +193,7 @@ class ActivityServiceTest {
       given(repository.save(any(LearningActivity.class))).willAnswer(invocation -> invocation.getArgument(0));
 
       // when
-      service.create(request, null);
+      service.create(request, null, authentication.getName());
       ArgumentCaptor<LearningActivity> captor = ArgumentCaptor.forClass(LearningActivity.class);
         
     

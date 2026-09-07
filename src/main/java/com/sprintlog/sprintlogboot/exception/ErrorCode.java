@@ -13,6 +13,7 @@ public enum ErrorCode {
   // ── 공통(Common) — C로 시작 ──────────────────────────────────────
   INVALID_INPUT     ("C001", HttpStatus.BAD_REQUEST,       "입력값이 올바르지 않습니다."),
   RESOURCE_NOT_FOUND("C002", HttpStatus.NOT_FOUND,         "요청하신 경로를 찾을 수 없습니다."),
+  ACCESS_DENIED     ("C003", HttpStatus.FORBIDDEN, "권한이 없습니다."),
   INTERNAL_ERROR    ("C999", HttpStatus.INTERNAL_SERVER_ERROR, "서버에서 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.");
 
   private final String code;             // "A001" — HTTP 상태와 독립적인 안정 식별자
