@@ -24,7 +24,7 @@ spring:
     name: sprintlog-boot
 
   profiles:
-    active: prod
+    active: dev
 
   servlet:
     multipart:

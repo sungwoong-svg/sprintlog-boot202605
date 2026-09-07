@@ -14,7 +14,7 @@ env:
   AWS_REGION: ap-northeast-2
   ECR_REPOSITORY: sprintlog
   ECS_CLUSTER: sprintlog-cluster
-  ECS_SERVICE: sprintlog-service
+  ECS_SERVICE: sprintlog-ecs-service
   ECS_TASK_DEFINITION: sprintlog-task
   CONTAINER_NAME: sprintlog-app # 작업 정의 안 컨테이너 이름과 정확히 일치해야 합니다.
 
