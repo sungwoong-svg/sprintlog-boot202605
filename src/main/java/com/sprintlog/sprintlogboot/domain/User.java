@@ -80,4 +80,11 @@ public class User extends BaseEntity{
     this.email = email;
     this.password = password;
   }
+
+  public User(String nickname, String email, String password, Role role) {
+    this.nickname = nickname;
+    this.email = email;
+    this.password = password;
+    this.role = role;
+  }
 }

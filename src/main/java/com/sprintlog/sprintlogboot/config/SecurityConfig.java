@@ -4,6 +4,8 @@ import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,6 +33,8 @@ public class SecurityConfig {
           // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
           // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
           .authorizeHttpRequests(auth -> auth
+              .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+              .requestMatchers("/api/v1/me/**").hasRole("USER")
               .anyRequest().permitAll()
           )
           .httpBasic(Customizer.withDefaults())
@@ -46,6 +50,18 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  /*
+  static인 이유: 이 계층 빈은 보안 인프라가 초기화되는 설정 단계에 확실하게 잡혀야한다.
+  static으로 선언하면 다른 빈의 조기 초기화 부작용 없이 이를 보장 받을 수 있다.
+  나중에 컨트롤러에 @PreAuthorize(메서드 보안) 도입 시 static을 붙이지 않으면 동작하지 않는 사례가 있다.
+   */
+  @Bean
+  static RoleHierarchy roleHierarchy() {
+    return RoleHierarchyImpl.withDefaultRolePrefix()
+        .role("ADMIN").implies("USER")
+        .build();
   }
 
 }
