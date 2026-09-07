@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.ArrayList;
@@ -25,6 +27,10 @@ public class User extends BaseEntity{
   // nullable = false 안넣는 이유는 소셜로그인
   @Column(length = 100)
   private String password;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private Role role = Role.USER;
 
   // 연관관계의 주인이 아닌 User는 mappedBy 속성을 세팅해 줍니다.
   // "owner"라는 값을 세팅한 건, 연관 관계의 주인 쪽 필드가 User다 라는 것을 말해주는 것.

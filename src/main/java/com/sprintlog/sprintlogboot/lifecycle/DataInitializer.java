@@ -12,6 +12,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,6 +25,9 @@ public class DataInitializer {
     private final SprintLogProperties properties;
     // 우리가 직접 UserRepository 빈 등록은 하지 않았지만 Spring data jpa가 이미 구현체를 빈으로 등록해 놨습니다.
     private final UserRepository userRepository;
+
+    // 비밀번호 암호화를 위한 빈 주입
+    private final PasswordEncoder passwordEncoder;
 
     // 주입된 의존성 객체를 가지고 무언가 해야 할 로직을 작성.
     @PostConstruct
@@ -38,7 +42,7 @@ public class DataInitializer {
 
         log.info("[lifecycle] @PostConstruct — DataInitializer 가 샘플 데이터를 적재합니다.");
         if (userRepository.count() == 0) {
-            User choon = new User("김춘식", "choon@naver.com");
+            User choon = new User("김춘식", "choon@naver.com", passwordEncoder.encode("password123"));
             LearningActivity l1 = new LearningActivity(
                 ActivityCategory.LECTURE, "Spring Bean Scope", 90, Visibility.PUBLIC, "이강사", null, null);
             LearningActivity l2 = new LearningActivity(

@@ -4,6 +4,7 @@ import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -32,6 +33,7 @@ public class SecurityConfig {
           .authorizeHttpRequests(auth -> auth
               .anyRequest().permitAll()
           )
+          .httpBasic(Customizer.withDefaults())
           .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)
           .addFilterAfter(new RequestLoggingFilter(), RequestIdFilter.class);
     return http.build();
