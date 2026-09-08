@@ -34,6 +34,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -42,6 +43,8 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 @WebMvcTest(ActivityController.class)
 @Import(SecurityConfig.class) // 우리 security 규칙을 테스트에도 적용할 수 있게.
+// post, put, delete 요청은 인증을 요구하게 됨. 그래서 사용자를 넣음
+@WithMockUser
 @DisplayName("ActivityController 웹 계층 테스트")
 class ActivityControllerTest {
 
@@ -115,7 +118,7 @@ class ActivityControllerTest {
     @Test
     @DisplayName("data 만 보내도 201 + Location (file 은 선택)")
     void 정상이면_201() throws Exception {
-      given(service.create(any(), any(), authentication.getName())).willReturn(sample);
+      given(service.create(any(), any(), any())).willReturn(sample);
 
       MockMultipartFile data = new MockMultipartFile("data", "data.json",
           MediaType.APPLICATION_JSON_VALUE,
@@ -134,7 +137,7 @@ class ActivityControllerTest {
     @Test
     @DisplayName("data + file 이면 201, 파일은 FileService로 저장된다.")
     void 파일첨부_201() throws Exception {
-      given(service.create(any(), any(), authentication.getName())).willReturn(sample);
+      given(service.create(any(), any(), any())).willReturn(sample);
       given(fileService.saveFile(any())).willReturn("saved-uuid.png"); // 저장했다 치고 파일명 반환
 
       MockMultipartFile data = new MockMultipartFile("data", "data.json",
@@ -170,7 +173,7 @@ class ActivityControllerTest {
           .andExpect(jsonPath("$.code").value("C001"))
           .andExpect(jsonPath("$.errors").exists());
 
-      verify(service, never()).create(any(), any(), authentication.getName());   // 파일이 없으면 저장도 안 함
+      verify(service, never()).create(any(), any(), any());   // 파일이 없으면 저장도 안 함
     }
   }
   
