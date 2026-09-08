@@ -61,6 +61,7 @@ public class SecurityConfig {
         // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
         // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/v1/me/**").hasRole("USER")
             .requestMatchers(HttpMethod.POST, "/api/v1/activities/**", "/api/activities/**").authenticated()
@@ -91,7 +92,7 @@ public class SecurityConfig {
             .logoutUrl("/logout") // POST /logout 으로 로그아웃
             .logoutSuccessUrl("/login.html?logout") // 로그아웃 완료 후 이동
             .invalidateHttpSession(true) // 세션 무효화(기본값이지만 명시)
-            .deleteCookies("JSESSIONID") // 세션 쿠키 삭제 
+            .deleteCookies("JSESSIONID") // 세션 쿠키 삭제
         )
 
         .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)

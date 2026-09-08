@@ -10,6 +10,9 @@ public enum ErrorCode {
   INVALID_ACTIVITY_INPUT ("A002", HttpStatus.BAD_REQUEST, "활동 데이터가 올바르지 않습니다."),
   ACTIVITY_ARCHIVE_FAILED("A003", HttpStatus.CONFLICT,    "활동 보관 처리에 실패했습니다."),  // 예약(체크 예외 ActivityArchiveException 은 계층 밖)
 
+  // ── 사용자(User) 도메인 — U로 시작 ──────────────────────────────
+  EMAIL_ALREADY_EXIST("U001", HttpStatus.CONFLICT, "이미 사용중인 이메일 입니다."),
+
   // ── 공통(Common) — C로 시작 ──────────────────────────────────────
   INVALID_INPUT     ("C001", HttpStatus.BAD_REQUEST,       "입력값이 올바르지 않습니다."),
   RESOURCE_NOT_FOUND("C002", HttpStatus.NOT_FOUND,         "요청하신 경로를 찾을 수 없습니다."),
