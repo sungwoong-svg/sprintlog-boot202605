@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SprintLog 로그인</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f5f6f8; display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
+    .card { background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); width: 320px; }
+    h1 { font-size: 20px; margin: 0 0 20px; }
+    label { display: block; font-size: 13px; color: #555; margin: 12px 0 4px; }
+    input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 15px; }
+    button { width: 100%; margin-top: 20px; padding: 12px; border: 0; border-radius: 6px; background: #1a56db; color: #fff; font-size: 15px; cursor: pointer; }
+    .msg { margin-top: 14px; font-size: 13px; }
+    .error { color: #d92d20; }
+    .info { color: #1a7f37; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>SprintLog 로그인</h1>
+  <!-- action=/login 은 SecurityConfig 의 loginProcessingUrl. Spring Security 가 이 POST 를 가로채 인증한다. -->
+  <!-- CSRF 를 껐으므로 여기엔 CSRF 토큰이 필요 없다. 세션 기반에서 CSRF 를 켜면 hidden 토큰을 넣어야 한다(다음 차시). -->
+  <form action="/login" method="post">
+    <label for="username">이메일</label>
+    <!-- 파라미터 이름은 반드시 username/password (Spring Security formLogin 기본). 값은 우리 로그인 아이디인 email. -->
+    <input id="username" name="username" type="text" placeholder="choon@naver.com" autofocus />
+
+    <label for="password">비밀번호</label>
+    <input id="password" name="password" type="password" placeholder="비밀번호" />
+
+    <button type="submit">로그인</button>
+  </form>
+  <div id="msg" class="msg"></div>
+</div>
+
+<script>
+  // 로그인 실패(?error) / 로그아웃 완료(?logout) 를 표시한다.
+  const params = new URLSearchParams(location.search);
+  const msg = document.getElementById('msg');
+  if (params.has('error'))  { msg.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.'; msg.className = 'msg error'; }
+  if (params.has('logout')) { msg.textContent = '로그아웃되었습니다.'; msg.className = 'msg info'; }
+</script>
+</body>
+</html>
