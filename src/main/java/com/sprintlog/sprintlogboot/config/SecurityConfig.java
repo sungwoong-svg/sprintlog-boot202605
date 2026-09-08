@@ -18,6 +18,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -70,6 +71,12 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.DELETE, "/api/v1/activities/**", "/api/activities/**").authenticated()
             .anyRequest().permitAll()
         )
+
+        .sessionManagement(session -> session
+            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+            .invalidSessionUrl("/login.html?expired")
+        )
+
         // 필터단에서 발생한 커스텀 예외 처리 등록 로직
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(restAuthenticationEntryPoint)
