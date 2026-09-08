@@ -5,6 +5,7 @@ import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,9 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity // 이 클래스가 웹 보안 설정
@@ -43,6 +47,16 @@ public class SecurityConfig {
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
         .csrf(csrf -> csrf.disable())
+
+        // CORS(교차 출처 자원 공유). 다른 출처의 브라우저 요청을 허용한다.
+        // Customizer.withDefaults() : 등록된 빈 중 CorsConfigurationSource 타입의 빈이 있다면 기본 적용하겠다.
+        .cors(Customizer.withDefaults())
+
+        // XSS 방어를 돕는 보안 응답 헤더 - Content-Security-Policy
+        // default-src 'self' = 기본적으로 같은 출처의 리소스만 로드 허용 -> 외부 악성 스크립트 주입을 완화
+        .headers(headers -> headers
+            .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
+        )
 
         // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
         // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
@@ -112,5 +126,20 @@ public class SecurityConfig {
     objectMapper.writeValue(response.getWriter(), pd);
   }
 
+  @Bean
+  CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    // 허용할 출처(운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
+    config.setAllowedOrigins(List.of("http://localhost:63342", "http://localhost:3000"));
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true); // 자격 증명 (쿠키, 인증 헤더) 허용
+
+    // 위에서 만든 규칙을 모든 URL 경로에 적용하겠다.
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+
+    return source;
+  }
 
 }
