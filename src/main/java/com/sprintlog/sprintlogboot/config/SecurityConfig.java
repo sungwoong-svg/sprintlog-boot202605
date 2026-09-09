@@ -19,12 +19,14 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -44,24 +46,26 @@ public class SecurityConfig {
       // AuthenticationEntryPoint, AccessDeniedHandler는 밑에 빈등록 로직이 작성되어 있으므로,
       // securityFilterChain이 호출될 때 등록된 빈이 전달되도록 세팅
       AuthenticationEntryPoint restAuthenticationEntryPoint,
-      AccessDeniedHandler restAccessDeniedHandler) throws Exception {
+      AccessDeniedHandler restAccessDeniedHandler,
+      PersistentTokenRepository persistentTokenRepository,
+      UserDetailsService userDetailsService) throws Exception {
     http
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
         .csrf(csrf -> csrf.disable())
 
         // CORS(교차 출처 자원 공유). 다른 출처의 브라우저 요청을 허용한다.
-        // Customizer.withDefaults() : 등록된 빈 중 CorsConfigurationSource 타입의 빈이 있다면 기본 적용하겠다.
+        // Customizer.withDefaults(): 등록된 빈 중 CorsConfigurationSource 타입의 빈이 있다면 기본 적용하겠다.
         .cors(Customizer.withDefaults())
 
         // XSS 방어를 돕는 보안 응답 헤더 - Content-Security-Policy
-        // default-src 'self' = 기본적으로 같은 출처의 리소스만 로드 허용 -> 외부 악성 스크립트 주입을 완화
+        // default-src 'self' = 기본적으로 같은 출처의 리소스만 로드 허용 -> 외부 악성 스크립트 주입을 완화.
         .headers(headers -> headers
             .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"))
         )
 
         // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
-        // 이 안에서 경로별 인증 및 권한 체크 진행이 가능
+        // 이 안에서 경로별 인증 및 권한 체크 진행이 가능가
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -71,44 +75,56 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.DELETE, "/api/v1/activities/**", "/api/activities/**").authenticated()
             .anyRequest().permitAll()
         )
-
         .sessionManagement(session -> session
-            .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-            .invalidSessionUrl("/login.html?expired")
-            .sessionFixation(fixation -> fixation.changeSessionId())
+//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) -> JWT는 세션 안씁니다.
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                .invalidSessionUrl("/login.html?expired")
+                // 세션 ID만 변경하고 세션 객체는 그대로 유지
+                .sessionFixation(fixation -> fixation.changeSessionId())
+//                                .sessionFixation(fixation -> fixation.migrateSession()) // 새 세션을 생성해서 기존 세션의 모든 속성을 복사한 후 기존 세션을 무효화
+//                                .sessionFixation(fixation -> fixation.newSession()) // 새 세션을 생성, 기존 데이터는 유지되지 않음!
+//                                .sessionFixation(fixation -> fixation.none()) // 사용하지 마세요. 아무것도 안합니다.
 
-            .sessionConcurrency(concurrency -> concurrency
-                .maximumSessions(1)
-                .maxSessionsPreventsLogin(false)
-                .expiredUrl("/login.html?expired")
-
-            )
+                // 동시성 관련 설정은 이 블록 안에서 작성한다.
+                .sessionConcurrency(concurrency -> concurrency
+                    .maximumSessions(1) // 한 사용자 당 최대 세션 수
+                    .maxSessionsPreventsLogin(false) // false: 새 로그인 시 이전 세션 만료, true: 이미 로그인 되어 있다면 새 로그인 차단.
+                    .expiredUrl("/login.html?expired")
+                )
         )
-
         // 필터단에서 발생한 커스텀 예외 처리 등록 로직
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(restAuthenticationEntryPoint)
             .accessDeniedHandler(restAccessDeniedHandler)
         )
-        // HTTP Basic 인증을 켠다. (Authorization 헤더에 Basic <email:password(Base64)>  형식으로 전달되면
-        // DaoAuthenticationProvider를 통해 로그인 검증을 수행하고 SecurityContext에 인증을 채운다.
-        // 매 요청마다 자격 증명을 실어 보내는 무상태 방식
+        // HTTP Basic 인증을 켠다. Authorization 헤더에 Basic <email:password(Base64)> 형식으로 전달되면
+        // DaoAutenticationProvider를 통해 로그인 검증을 수행하고 SecurityContext에 인증을 채운다.
+        // 매 요청마다 자격증명을 실어 보내는 무상태(stateless) 방식
         .httpBasic(Customizer.withDefaults())
 
         // 폼 로그인 (세션 기반)을 켠다.
         // 한 번 로그인하면 서버가 세션을 만들고 JSESSIONID 쿠키를 발급한다.
-        // 이후 요청은 쿠키 만으로 인증 유지된다. 상태유지 (stateful) 방식
+        // 이후 요청은 그 쿠키만으로 인증 유지된다 - 상태 유지(stateful) 방식
         .formLogin(form -> form
             .loginPage("/login.html") // 우리가 만들 로그인 페이지
             .loginProcessingUrl("/login") // 폼이 POST 처리되는 URL(Spring이 가로챔)
             .defaultSuccessUrl("/api/v1/auth/whoami", true)
             .permitAll() // 로그인 요청은 누구나 접근 가능
         )
+
+        .rememberMe(remember -> remember
+            .key("sprintlog-rememberme-secret-key") // 토큰 서명에 사용하는 비밀 키.
+            .rememberMeParameter("remember-me") // 로그인 폼의 checkbox name과 똑같이 일치
+            .tokenValiditySeconds(60 * 60 * 24 * 14) // 14일
+            .tokenRepository(persistentTokenRepository) // 영구 토큰을 저장/조회할 곳
+            .userDetailsService(userDetailsService) // 쿠키가 유효할 때 email로 사용자를 다시 로드하는 다리 역할 객체
+        )
+
         .logout(logout -> logout
-            .logoutUrl("/logout") // POST /logout 으로 로그아웃
+            .logoutUrl("/logout")   // POST /logout 으로 로그아웃
             .logoutSuccessUrl("/login.html?logout") // 로그아웃 완료 후 이동
-            .invalidateHttpSession(true) // 세션 무효화(기본값이지만 명시)
-            .deleteCookies("JSESSIONID") // 세션 쿠키 삭제
+            .invalidateHttpSession(true)    // 세션 무효화(기본값이지만 명시)
+            .deleteCookies("JSESSIONID", "remember-me") // 세션 쿠키 삭제, 자동 로그인 쿠키도 삭제
         )
 
         .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)
@@ -164,7 +180,7 @@ public class SecurityConfig {
   }
 
   // 서블릿 컨테이너의 세션 생성/소멸을 Spring 이벤트로 발행한다.
-  // 동시 세션 제어에서도 세션 개수를 추적하려면 이 퍼블리셔가 필요하다.
+  // 동시 세션 제어에서도 세션 개수를 추적하려면 이 publisher가 필요하다.
   @Bean
   HttpSessionEventPublisher httpSessionEventPublisher() {
     return new HttpSessionEventPublisher();
@@ -173,7 +189,7 @@ public class SecurityConfig {
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    // 허용할 출처(운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
+    // 허용할 출처 (운영에서는 실제 프론트 도메인 주소가 들어갑니다.)
     config.setAllowedOrigins(List.of("http://localhost:63342", "http://localhost:3000"));
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
@@ -185,5 +201,6 @@ public class SecurityConfig {
 
     return source;
   }
+
 
 }
