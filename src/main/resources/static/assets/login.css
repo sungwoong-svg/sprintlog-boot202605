@@ -1,0 +1,15 @@
+/* SprintLog 로그인 페이지 스타일.
+   [CP122→] CSP(default-src 'self')가 인라인 <style> 을 막으므로 같은 출처 외부 파일로 분리한다. */
+body { font-family: system-ui, sans-serif; background: #f5f6f8; display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
+.card { background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); width: 320px; }
+h1 { font-size: 20px; margin: 0 0 20px; }
+label { display: block; font-size: 13px; color: #555; margin: 12px 0 4px; }
+input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 15px; }
+button { width: 100%; margin-top: 20px; padding: 12px; border: 0; border-radius: 6px; background: #1a56db; color: #fff; font-size: 15px; cursor: pointer; }
+.msg { margin-top: 14px; font-size: 13px; }
+.error { color: #d92d20; }
+.info { color: #1a7f37; }
+
+/* [CP127] '로그인 유지' 체크박스 줄 — 원래 인라인 style= 속성이었으나 CSP 때문에 클래스로 분리. */
+.remember { display: flex; align-items: center; gap: 6px; margin-top: 14px; font-size: 13px; }
+.remember input { width: auto; }

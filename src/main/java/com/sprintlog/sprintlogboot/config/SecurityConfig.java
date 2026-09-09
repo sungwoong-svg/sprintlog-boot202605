@@ -75,6 +75,14 @@ public class SecurityConfig {
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
             .invalidSessionUrl("/login.html?expired")
+            .sessionFixation(fixation -> fixation.changeSessionId())
+
+            .sessionConcurrency(concurrency -> concurrency
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(false)
+                .expiredUrl("/login.html?expired")
+
+            )
         )
 
         // 필터단에서 발생한 커스텀 예외 처리 등록 로직

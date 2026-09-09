@@ -4,24 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SprintLog 로그인</title>
-  <style>
-    body { font-family: system-ui, sans-serif; background: #f5f6f8; display: flex; min-height: 100vh; align-items: center; justify-content: center; margin: 0; }
-    .card { background: #fff; padding: 32px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); width: 320px; }
-    h1 { font-size: 20px; margin: 0 0 20px; }
-    label { display: block; font-size: 13px; color: #555; margin: 12px 0 4px; }
-    input { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 15px; }
-    button { width: 100%; margin-top: 20px; padding: 12px; border: 0; border-radius: 6px; background: #1a56db; color: #fff; font-size: 15px; cursor: pointer; }
-    .msg { margin-top: 14px; font-size: 13px; }
-    .error { color: #d92d20; }
-    .info { color: #1a7f37; }
-  </style>
+  <!-- CSP(default-src 'self')가 인라인 <style>/<script>/style= 속성을 막으므로
+       스타일·스크립트를 같은 출처 외부 파일(/assets/login.css, /assets/login.js)로 분리한다.
+       이 페이지는 '정적(SPA 스타일)' 이라 서버가 _csrf hidden 필드를 박아줄 수 없어,
+       login.js 가 XSRF-TOKEN 쿠키를 읽어 X-XSRF-TOKEN 헤더로 실어 보낸다(실제 React 흐름).
+       (만약 Thymeleaf 같은 '서버 렌더링 폼' 이었다면 <input type="hidden" name="_csrf" th:value="${_csrf.token}"> 를 썼을 것이다.) -->
+  <link rel="stylesheet" href="/assets/login.css" />
 </head>
 <body>
 <div class="card">
   <h1>SprintLog 로그인</h1>
-  <!-- action=/login 은 SecurityConfig 의 loginProcessingUrl. Spring Security 가 이 POST 를 가로채 인증한다. -->
-  <!-- CSRF 를 껐으므로 여기엔 CSRF 토큰이 필요 없다. 세션 기반에서 CSRF 를 켜면 hidden 토큰을 넣어야 한다(다음 차시). -->
-  <form action="/login" method="post">
+  <form id="loginForm">
     <label for="username">이메일</label>
     <!-- 파라미터 이름은 반드시 username/password (Spring Security formLogin 기본). 값은 우리 로그인 아이디인 email. -->
     <input id="username" name="username" type="text" placeholder="choon@naver.com" autofocus />
@@ -29,17 +22,17 @@
     <label for="password">비밀번호</label>
     <input id="password" name="password" type="password" placeholder="비밀번호" />
 
+    <!-- '로그인 유지'(자동 로그인) 체크박스. name 은 SecurityConfig 의 rememberMeParameter("remember-me") 와 일치. -->
+    <label class="remember">
+      <input id="remember-me" name="remember-me" type="checkbox" />
+      로그인 유지
+    </label>
+
     <button type="submit">로그인</button>
   </form>
   <div id="msg" class="msg"></div>
 </div>
 
-<script>
-  // 로그인 실패(?error) / 로그아웃 완료(?logout) 를 표시한다.
-  const params = new URLSearchParams(location.search);
-  const msg = document.getElementById('msg');
-  if (params.has('error'))  { msg.textContent = '이메일 또는 비밀번호가 올바르지 않습니다.'; msg.className = 'msg error'; }
-  if (params.has('logout')) { msg.textContent = '로그아웃되었습니다.'; msg.className = 'msg info'; }
-</script>
+<script src="/assets/login.js"></script>
 </body>
 </html>
