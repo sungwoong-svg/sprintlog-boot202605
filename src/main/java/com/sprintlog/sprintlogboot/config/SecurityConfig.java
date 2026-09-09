@@ -5,6 +5,7 @@ import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import com.sprintlog.sprintlogboot.security.LoginFailureHandler;
 import com.sprintlog.sprintlogboot.security.LoginSuccessHandler;
+import com.sprintlog.sprintlogboot.security.SpaCsefTokenRequestHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -32,6 +33,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -59,7 +61,10 @@ public class SecurityConfig {
     http
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
-        .csrf(csrf -> csrf.disable())
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // Csrf 쿠키는 JS가 읽어서 헤더에 실어야 되기 때문에 httpOnly를 false로
+            .csrfTokenRequestHandler(new SpaCsefTokenRequestHandler())
+        )
 
         // CORS(교차 출처 자원 공유). 다른 출처의 브라우저 요청을 허용한다.
         // Customizer.withDefaults(): 등록된 빈 중 CorsConfigurationSource 타입의 빈이 있다면 기본 적용하겠다.
