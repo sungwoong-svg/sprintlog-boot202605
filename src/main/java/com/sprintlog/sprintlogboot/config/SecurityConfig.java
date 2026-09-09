@@ -5,7 +5,7 @@ import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import com.sprintlog.sprintlogboot.security.LoginFailureHandler;
 import com.sprintlog.sprintlogboot.security.LoginSuccessHandler;
-import com.sprintlog.sprintlogboot.security.SpaCsefTokenRequestHandler;
+import com.sprintlog.sprintlogboot.security.SpaCsrfTokenRequestHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +22,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -57,13 +59,14 @@ public class SecurityConfig {
       PersistentTokenRepository persistentTokenRepository,
       UserDetailsService userDetailsService,
       AuthenticationSuccessHandler loginSuccessHandler,
-      AuthenticationFailureHandler loginFailureHandler) throws Exception {
+      AuthenticationFailureHandler loginFailureHandler,
+      SessionRegistry sessionRegistry) throws Exception {
     http
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
         .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // Csrf 쿠키는 JS가 읽어서 헤더에 실어야 되기 때문에 httpOnly를 false로
-            .csrfTokenRequestHandler(new SpaCsefTokenRequestHandler())
+            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // csrf 쿠키는 JS가 읽어서 헤더에 실어야 되기 때문에 httpOnly를 false로
+            .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
         )
 
         // CORS(교차 출처 자원 공유). 다른 출처의 브라우저 요청을 허용한다.
@@ -79,14 +82,23 @@ public class SecurityConfig {
         // 서버로 들어오는 요청 중 어떤 요청을 허용할 것인가에 대한 설정
         // 이 안에서 경로별 인증 및 권한 체크 진행이 가능가
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
+            // ── 공개(permitAll) — 로그인 전에도 되어야 하는 것들 ──
+            .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf-token").permitAll()  // CSRF 토큰 발급
+            .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()           // 회원가입
+            .requestMatchers("/login", "/logout").permitAll()                        // 로그인·로그아웃 처리
+            .requestMatchers(HttpMethod.GET, "/api/v1/auth/whoami").permitAll()       // 익명 확인용 데모
+            .requestMatchers(HttpMethod.GET, "/api/v1/activities/**", "/api/activities/**").permitAll() // 활동 조회는 공개(SprintLog 도메인)
+            .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**").permitAll() // 정적 리소스
+            .requestMatchers("/h2-console/**").permitAll()
+            // ── 역할 기반 ──
             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/v1/me/**").hasRole("USER")
-            .requestMatchers(HttpMethod.POST, "/api/v1/activities/**", "/api/activities/**").authenticated()
-            .requestMatchers(HttpMethod.PUT, "/api/v1/activities/**", "/api/activities/**").authenticated()
-            .requestMatchers(HttpMethod.DELETE, "/api/v1/activities/**", "/api/activities/**").authenticated()
-            .requestMatchers("/api/v1/auth/me").authenticated()
-            .anyRequest().permitAll()
+            // 권한 변경 API 는 관리자만(메서드 레벨 @PreAuthorize 와 두 겹).
+            .requestMatchers(HttpMethod.PUT, "/api/v1/auth/role").hasRole("ADMIN")
+            // ── 그 외 전부 로그인 필요(기본 잠금) ──
+            //   활동 쓰기(POST/PUT/DELETE)·현재 사용자(/me) 등은 자동으로 여기에 걸린다.
+            //   소유권 등 세밀한 검사는 서비스의 @PreAuthorize 가 이어서 한다(두 겹 방어).
+            .anyRequest().authenticated()
         )
         .sessionManagement(session -> session
 //                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) -> JWT는 세션 안씁니다.
@@ -94,15 +106,14 @@ public class SecurityConfig {
                 .invalidSessionUrl("/login.html?expired")
                 // 세션 ID만 변경하고 세션 객체는 그대로 유지
                 .sessionFixation(fixation -> fixation.changeSessionId())
-//                                .sessionFixation(fixation -> fixation.migrateSession()) // 새 세션을 생성해서 기존 세션의 모든 속성을 복사한 후 기존 세션을 무효화
-//                                .sessionFixation(fixation -> fixation.newSession()) // 새 세션을 생성, 기존 데이터는 유지되지 않음!
-//                                .sessionFixation(fixation -> fixation.none()) // 사용하지 마세요. 아무것도 안합니다.
+
 
                 // 동시성 관련 설정은 이 블록 안에서 작성한다.
                 .sessionConcurrency(concurrency -> concurrency
                     .maximumSessions(1) // 한 사용자 당 최대 세션 수
                     .maxSessionsPreventsLogin(false) // false: 새 로그인 시 이전 세션 만료, true: 이미 로그인 되어 있다면 새 로그인 차단.
                     .expiredUrl("/login.html?expired")
+                    .sessionRegistry(sessionRegistry)
                 )
         )
         // 필터단에서 발생한 커스텀 예외 처리 등록 로직
@@ -111,7 +122,7 @@ public class SecurityConfig {
             .accessDeniedHandler(restAccessDeniedHandler)
         )
         // HTTP Basic 인증을 켠다. Authorization 헤더에 Basic <email:password(Base64)> 형식으로 전달되면
-        // DaoAutenticationProvider를 통해 로그인 검증을 수행하고 SecurityContext에 인증을 채운다.
+        // DaoAuthenticationProvider를 통해 로그인 검증을 수행하고 SecurityContext에 인증을 채운다.
         // 매 요청마다 자격증명을 실어 보내는 무상태(stateless) 방식
         .httpBasic(Customizer.withDefaults())
 
@@ -152,6 +163,11 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  public SessionRegistry sessionRegistry() {
+    return new SessionRegistryImpl();
   }
 
   @Bean

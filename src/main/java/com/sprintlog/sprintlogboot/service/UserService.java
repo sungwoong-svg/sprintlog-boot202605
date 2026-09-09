@@ -1,15 +1,21 @@
 package com.sprintlog.sprintlogboot.service;
 
+import com.sprintlog.sprintlogboot.domain.Role;
 import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.dto.request.SignUpRequest;
 import com.sprintlog.sprintlogboot.dto.response.UserResponse;
 import com.sprintlog.sprintlogboot.exception.BusinessException;
 import com.sprintlog.sprintlogboot.exception.ErrorCode;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
+import com.sprintlog.sprintlogboot.security.CustomUserDetails;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +26,9 @@ public class UserService {
 
   private final PasswordEncoder passwordEncoder;
 
+  private final SessionRegistry sessionRegistry;
 
+  @Transactional
   public UserResponse register(SignUpRequest request) {
     // 1. 이메일 중복 확인 (409 status)
     if (userRepository.existsByEmail(request.email())) {
@@ -39,6 +47,29 @@ public class UserService {
 
     return UserResponse.from(user);
 
+  }
+
+  @Transactional
+  public UserResponse changeRole(String email, Role newRole) {
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+    user.changeRole(newRole);
+
+    expireSessionOf(email);
+
+    User saved = userRepository.save(user);
+    return UserResponse.from(saved);
+  }
+
+  private void expireSessionOf(String email) {
+    for (Object principal : sessionRegistry.getAllPrincipals()) {
+      if (principal instanceof CustomUserDetails details
+      && details.getUsername().equals(email)) {
+        List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
+        sessions.forEach(SessionInformation::expireNow);         
+
+      }
+    }
   }
 
 }
