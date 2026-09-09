@@ -3,6 +3,8 @@ package com.sprintlog.sprintlogboot.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
+import com.sprintlog.sprintlogboot.security.LoginFailureHandler;
+import com.sprintlog.sprintlogboot.security.LoginSuccessHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -25,7 +27,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
@@ -48,7 +53,9 @@ public class SecurityConfig {
       AuthenticationEntryPoint restAuthenticationEntryPoint,
       AccessDeniedHandler restAccessDeniedHandler,
       PersistentTokenRepository persistentTokenRepository,
-      UserDetailsService userDetailsService) throws Exception {
+      UserDetailsService userDetailsService,
+      AuthenticationSuccessHandler loginSuccessHandler,
+      AuthenticationFailureHandler loginFailureHandler) throws Exception {
     http
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
@@ -73,6 +80,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/v1/activities/**", "/api/activities/**").authenticated()
             .requestMatchers(HttpMethod.PUT, "/api/v1/activities/**", "/api/activities/**").authenticated()
             .requestMatchers(HttpMethod.DELETE, "/api/v1/activities/**", "/api/activities/**").authenticated()
+            .requestMatchers("/api/v1/auth/me").authenticated()
             .anyRequest().permitAll()
         )
         .sessionManagement(session -> session
@@ -106,9 +114,9 @@ public class SecurityConfig {
         // 한 번 로그인하면 서버가 세션을 만들고 JSESSIONID 쿠키를 발급한다.
         // 이후 요청은 그 쿠키만으로 인증 유지된다 - 상태 유지(stateful) 방식
         .formLogin(form -> form
-            .loginPage("/login.html") // 우리가 만들 로그인 페이지
             .loginProcessingUrl("/login") // 폼이 POST 처리되는 URL(Spring이 가로챔)
-            .defaultSuccessUrl("/api/v1/auth/whoami", true)
+            .successHandler(loginSuccessHandler)
+            .failureHandler(loginFailureHandler)
             .permitAll() // 로그인 요청은 누구나 접근 가능
         )
 
@@ -122,7 +130,7 @@ public class SecurityConfig {
 
         .logout(logout -> logout
             .logoutUrl("/logout")   // POST /logout 으로 로그아웃
-            .logoutSuccessUrl("/login.html?logout") // 로그아웃 완료 후 이동
+            .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)) // 204
             .invalidateHttpSession(true)    // 세션 무효화(기본값이지만 명시)
             .deleteCookies("JSESSIONID", "remember-me") // 세션 쿠키 삭제, 자동 로그인 쿠키도 삭제
         )
@@ -139,6 +147,16 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
+  }
+
+  @Bean
+  AuthenticationSuccessHandler loginSuccessHandler(ObjectMapper objectMapper) {
+    return new LoginSuccessHandler(objectMapper);
+  }
+
+  @Bean
+  AuthenticationFailureHandler loginFailureHandler(ObjectMapper objectMapper) {
+    return new LoginFailureHandler(objectMapper);
   }
 
   /*
