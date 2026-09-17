@@ -75,3 +75,10 @@ sprintlog:
     count: 4
   file-directory: /Users/apple/Desktop/codeit-13th-develop/sprintlog-boot/attachfile
 
+  # secret: HS256 서명 비밀키. 최소 32바이트(256비트) 이상 - 짧으면 예외 발생!
+  # 운영 환경에서는 비밀키 노출 조심! 코드/설정 파일에 두지 않고 환경 변수로 주입 추천!
+  jwt:
+    secret: ${JWT_SECRET:sprintlog-jwt-secret-key-32bytes!}
+    access-token-validity: 30m
+    issuer: sprintlog
+
