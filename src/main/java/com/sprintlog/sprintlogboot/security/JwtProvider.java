@@ -87,7 +87,12 @@ public class JwtProvider {
 
   /** 검증을 통과한 토큰에서 역할(role 클레임) 추출. */
   public Role getRole(String token) {
-    return Role.valueOf(parseClaims(token).get(CLAIM_ROLE, String.class));
+    return getRole(parseClaims(token));
+  }
+
+  // 이미 검증된 Claims에서 역할 추출
+  public Role getRole(Claims claims) {
+    return Role.valueOf(claims.get(CLAIM_ROLE, String.class));
   }
 
 
