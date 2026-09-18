@@ -151,6 +151,8 @@ public class ActivityE2ETest {
     headers.setContentType(MediaType.APPLICATION_JSON);
     return new HttpEntity<>(body, headers);
   }
+
+  
   
   @Test
   @DisplayName("생성 -> 조회 왕복 - POST로 만든 활동을 그 Location으로 다시 GET하면 같은 활동이 온다.")

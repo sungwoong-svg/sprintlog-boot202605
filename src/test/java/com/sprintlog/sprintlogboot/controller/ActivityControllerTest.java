@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.verify;
 import static org.mockito.BDDMockito.willThrow;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -91,7 +92,7 @@ class ActivityControllerTest {
       given(service.get(1L)).willReturn(sample);
 
       // when & then
-      mvc.perform(get("/api/v1/activities/1"))
+      mvc.perform(get("/api/v1/activities/1").with(csrf()))
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.id").value(1))
           .andExpect(jsonPath("$.title").value("스프링 강의"))
@@ -103,7 +104,7 @@ class ActivityControllerTest {
     void 없으면_404() throws Exception {
       given(service.get(999L)).willThrow(new ActivityNotFoundException(999L));
 
-      mvc.perform(get("/api/v1/activities/999"))
+      mvc.perform(get("/api/v1/activities/999").with(csrf()))
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.status").value(404))
           .andExpect(jsonPath("$.code").value("A001"));   // ErrorCode 가 실린다
@@ -117,7 +118,7 @@ class ActivityControllerTest {
       given(service.page(eq("id"), eq(1), eq(5), eq(null))).willReturn(page);
 
       // when & then
-      mvc.perform(get("/api/v1/activities")
+      mvc.perform(get("/api/v1/activities").with(csrf())
               .param("sort", "id")
               .param("page", "1")
               .param("size", "5"))
@@ -142,7 +143,7 @@ class ActivityControllerTest {
           {"category":"LECTURE","title":"스프링 강의","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
           """.getBytes());
 
-      mvc.perform(multipart("/api/v1/activities").file(data))
+      mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
           .andExpect(status().isCreated())
           .andExpect(header().string("Location", "/api/activities/1"))
           .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -167,7 +168,7 @@ class ActivityControllerTest {
           = new MockMultipartFile("file", "proof.png",
           MediaType.IMAGE_PNG_VALUE, "이미지-바이트-데이터".getBytes());
 
-      mvc.perform(multipart("/api/v1/activities").file(data).file(file))
+      mvc.perform(multipart("/api/v1/activities").file(data).file(file).with(csrf()))
           .andExpect(status().isCreated())
           .andExpect(header().string("Location", "/api/activities/1"))
           .andExpect(jsonPath("$.title").value("스프링 강의"));
@@ -184,7 +185,7 @@ class ActivityControllerTest {
           {"category":"LECTURE","title":"","minutes":30,"visibility":"PUBLIC","instructorName":"이강사"}
           """.getBytes());
 
-      mvc.perform(multipart("/api/v1/activities").file(data))
+      mvc.perform(multipart("/api/v1/activities").file(data).with(csrf()))
           .andExpect(status().isBadRequest())
           .andExpect(jsonPath("$.code").value("C001"))
           .andExpect(jsonPath("$.errors").exists());
@@ -205,7 +206,7 @@ class ActivityControllerTest {
       given(service.update(eq(1L), any(UpdateActivityRequest.class))).willReturn(sample);
 
       // when & then
-      mvc.perform(put("/api/v1/activities/1")
+      mvc.perform(put("/api/v1/activities/1").with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .content("{\"title\":\"새 제목\",\"visibility\":\"PUBLIC\"}"))
           .andExpect(status().isOk())
@@ -219,7 +220,7 @@ class ActivityControllerTest {
           .willThrow(new ActivityNotFoundException(999L));
 
       // when & then
-      mvc.perform(put("/api/v1/activities/999")
+      mvc.perform(put("/api/v1/activities/999").with(csrf())
               .contentType(MediaType.APPLICATION_JSON)
               .content("{\"title\":\"x\",\"visibility\":\"PUBLIC\"}"))
           .andExpect(status().isNotFound())
@@ -248,7 +249,7 @@ class ActivityControllerTest {
     void 없으면_404() throws Exception {
       willThrow(new ActivityNotFoundException(999L)).given(service).delete(999L);
 
-      mvc.perform(delete("/api/v1/activities/999"))
+      mvc.perform(delete("/api/v1/activities/999").with(csrf()))
           .andExpect(status().isNotFound())
           .andExpect(jsonPath("$.code").value("A001"));
     }
