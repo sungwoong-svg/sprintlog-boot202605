@@ -1,21 +1,31 @@
 package com.sprintlog.sprintlogboot.controller;
 
+import com.sprintlog.sprintlogboot.dto.request.LoginRequest;
+import com.sprintlog.sprintlogboot.dto.response.TokenResponse;
 import com.sprintlog.sprintlogboot.dto.response.UserResponse;
 import com.sprintlog.sprintlogboot.security.CustomUserDetails;
+import com.sprintlog.sprintlogboot.service.AuthService;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
 public class AuthController {
+
+  private final AuthService authService;
 
   @GetMapping("/whoami")
   public Map<String, Object> whoami() {
@@ -42,5 +52,10 @@ public class AuthController {
   @GetMapping("/me")
   public UserResponse me(@AuthenticationPrincipal CustomUserDetails principal) {
     return UserResponse.from(principal.getUser());
+  }
+
+  @PostMapping("/login")
+  public TokenResponse login(@Valid @RequestBody LoginRequest request) {
+    return authService.login(request);
   }
 }
