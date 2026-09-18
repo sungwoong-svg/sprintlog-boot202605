@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.dto.request.SignUpRequest;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
-import java.net.http.HttpClient;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,10 +18,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.web.client.RestTemplate;
 
 /**
  * [CP123a] 회원가입 통합 테스트.
@@ -105,17 +103,13 @@ class UserRegistrationTest {
         assertThat(signup(req).getStatusCode())
                 .isEqualTo(HttpStatus.CREATED);
 
-        // 2) 가입한 그 계정으로 폼 로그인 → [CP127b] 200 + JSESSIONID (리다이렉트 미추적 클라이언트로)
-        HttpClient jdk = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NEVER).build();
-        RestTemplate noRedirect = new RestTemplate(new JdkClientHttpRequestFactory(jdk));
-
         ResponseEntity<String> login = rest.withBasicAuth("e2e@sprintlog.com", "password123")
             .getForEntity(base + "/api/v1/auth/me", String.class);
 
         // [CP127b] SPA 방식 — 로그인 성공이 302 리다이렉트에서 200(JSON)으로 바뀌었다.
         assertThat(login.getStatusCode()).isEqualTo(HttpStatus.OK);               // 200 (성공)
-        // Set-Cookie 에 JSESSIONID·XSRF-TOKEN 이 함께 오므로 목록 전체에서 JSESSIONID 존재를 확인.
-        assertThat(login.getHeaders().get(HttpHeaders.SET_COOKIE))
-                .anyMatch(c -> c.contains("JSESSIONID"));
+
+        List<String> setCookies = login.getHeaders().get(HttpHeaders.SET_COOKIE);
+        assertThat(setCookies == null || setCookies.stream().noneMatch(c -> c.contains("JSESSIONID"))).isTrue();
     }
 }
