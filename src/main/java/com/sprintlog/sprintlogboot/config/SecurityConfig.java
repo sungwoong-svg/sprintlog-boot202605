@@ -3,9 +3,7 @@ package com.sprintlog.sprintlogboot.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
-import com.sprintlog.sprintlogboot.security.LoginFailureHandler;
-import com.sprintlog.sprintlogboot.security.LoginSuccessHandler;
-import com.sprintlog.sprintlogboot.security.SpaCsrfTokenRequestHandler;
+import com.sprintlog.sprintlogboot.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
@@ -22,21 +20,12 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.core.session.SessionRegistryImpl;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -56,18 +45,11 @@ public class SecurityConfig {
       // securityFilterChain이 호출될 때 등록된 빈이 전달되도록 세팅
       AuthenticationEntryPoint restAuthenticationEntryPoint,
       AccessDeniedHandler restAccessDeniedHandler,
-      PersistentTokenRepository persistentTokenRepository,
-      UserDetailsService userDetailsService,
-      AuthenticationSuccessHandler loginSuccessHandler,
-      AuthenticationFailureHandler loginFailureHandler,
-      SessionRegistry sessionRegistry) throws Exception {
+      JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
     http
         // REST API는 브라우저 세션 폼이 아니라 클라이언트가 직접 요청하므로
         // 지금 단계에서는 CSRF 보호를 끈다. (세션 / 폼 기반으로 넘어갈 때 다시 다룬다)
-        .csrf(csrf -> csrf
-            .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // csrf 쿠키는 JS가 읽어서 헤더에 실어야 되기 때문에 httpOnly를 false로
-            .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-        )
+        .csrf(csrf -> csrf.disable())
 
         // CORS(교차 출처 자원 공유). 다른 출처의 브라우저 요청을 허용한다.
         // Customizer.withDefaults(): 등록된 빈 중 CorsConfigurationSource 타입의 빈이 있다면 기본 적용하겠다.
@@ -89,7 +71,7 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/v1/auth/whoami").permitAll()       // 익명 확인용 데모
             .requestMatchers(HttpMethod.GET, "/api/v1/activities/**", "/api/activities/**").permitAll() // 활동 조회는 공개(SprintLog 도메인)
             .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**").permitAll() // 정적 리소스
-            .requestMatchers("/h2-console/**").permitAll()
+            .requestMatchers("/h2-console/**", "/my-api").permitAll()
             // ── 역할 기반 ──
             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/v1/me/**").hasRole("USER")
@@ -101,20 +83,7 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         .sessionManagement(session -> session
-//                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) -> JWT는 세션 안씁니다.
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionUrl("/login.html?expired")
-                // 세션 ID만 변경하고 세션 객체는 그대로 유지
-                .sessionFixation(fixation -> fixation.changeSessionId())
-
-
-                // 동시성 관련 설정은 이 블록 안에서 작성한다.
-                .sessionConcurrency(concurrency -> concurrency
-                    .maximumSessions(1) // 한 사용자 당 최대 세션 수
-                    .maxSessionsPreventsLogin(false) // false: 새 로그인 시 이전 세션 만료, true: 이미 로그인 되어 있다면 새 로그인 차단.
-                    .expiredUrl("/login.html?expired")
-                    .sessionRegistry(sessionRegistry)
-                )
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // -> JWT 세션 안씁니다.
         )
         // 필터단에서 발생한 커스텀 예외 처리 등록 로직
         .exceptionHandling(ex -> ex
@@ -126,32 +95,8 @@ public class SecurityConfig {
         // 매 요청마다 자격증명을 실어 보내는 무상태(stateless) 방식
         .httpBasic(Customizer.withDefaults())
 
-        // 폼 로그인 (세션 기반)을 켠다.
-        // 한 번 로그인하면 서버가 세션을 만들고 JSESSIONID 쿠키를 발급한다.
-        // 이후 요청은 그 쿠키만으로 인증 유지된다 - 상태 유지(stateful) 방식
-        .formLogin(form -> form
-            .loginProcessingUrl("/login") // 폼이 POST 처리되는 URL(Spring이 가로챔)
-            .successHandler(loginSuccessHandler)
-            .failureHandler(loginFailureHandler)
-            .permitAll() // 로그인 요청은 누구나 접근 가능
-        )
-
-        .rememberMe(remember -> remember
-            .key("sprintlog-rememberme-secret-key") // 토큰 서명에 사용하는 비밀 키.
-            .rememberMeParameter("remember-me") // 로그인 폼의 checkbox name과 똑같이 일치
-            .tokenValiditySeconds(60 * 60 * 24 * 14) // 14일
-            .tokenRepository(persistentTokenRepository) // 영구 토큰을 저장/조회할 곳
-            .userDetailsService(userDetailsService) // 쿠키가 유효할 때 email로 사용자를 다시 로드하는 다리 역할 객체
-        )
-
-        .logout(logout -> logout
-            .logoutUrl("/logout")   // POST /logout 으로 로그아웃
-            .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)) // 204
-            .invalidateHttpSession(true)    // 세션 무효화(기본값이지만 명시)
-            .deleteCookies("JSESSIONID", "remember-me") // 세션 쿠키 삭제, 자동 로그인 쿠키도 삭제
-        )
-
-        .addFilterBefore(new RequestIdFilter(), UsernamePasswordAuthenticationFilter.class)
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(new RequestIdFilter(), JwtAuthenticationFilter.class)
         .addFilterAfter(new RequestLoggingFilter(), RequestIdFilter.class);
     return http.build();
   }
@@ -163,21 +108,6 @@ public class SecurityConfig {
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
-  }
-
-  @Bean
-  public SessionRegistry sessionRegistry() {
-    return new SessionRegistryImpl();
-  }
-
-  @Bean
-  AuthenticationSuccessHandler loginSuccessHandler(ObjectMapper objectMapper) {
-    return new LoginSuccessHandler(objectMapper);
-  }
-
-  @Bean
-  AuthenticationFailureHandler loginFailureHandler(ObjectMapper objectMapper) {
-    return new LoginFailureHandler(objectMapper);
   }
 
   /*
@@ -218,12 +148,6 @@ public class SecurityConfig {
     objectMapper.writeValue(response.getWriter(), pd);
   }
 
-  // 서블릿 컨테이너의 세션 생성/소멸을 Spring 이벤트로 발행한다.
-  // 동시 세션 제어에서도 세션 개수를 추적하려면 이 publisher가 필요하다.
-  @Bean
-  HttpSessionEventPublisher httpSessionEventPublisher() {
-    return new HttpSessionEventPublisher();
-  }
 
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
