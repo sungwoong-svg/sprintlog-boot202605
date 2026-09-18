@@ -1,7 +1,9 @@
 package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.domain.ActivityAuditLog;
+import com.sprintlog.sprintlogboot.dto.response.AuditLogResponse;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,5 +22,12 @@ public class AuditService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void logAttempt(String action, String detail) {
     auditLogRepository.save(new ActivityAuditLog(action, detail));
+  }
+
+  @Transactional(readOnly = true)
+  public List<AuditLogResponse> findAllRecentFirst() {
+    return auditLogRepository.findAllByOrderByIdDesc().stream()
+        .map(AuditLogResponse::from)
+        .toList();
   }
 }

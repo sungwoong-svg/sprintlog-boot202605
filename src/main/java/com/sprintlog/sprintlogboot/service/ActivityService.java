@@ -132,7 +132,7 @@ public class ActivityService {
     return activity;
   }
 
-  @PreAuthorize("hasRole('ADMIN') or @activityGuard.isOwner(#id, authentication.name)")
+  @PreAuthorize("hasRole('ADMIN') or @activityGuard.isOwner(#id, authentication.principal.id)")
   @Transactional // 메서드 레벨이 트랜잭션을 걸면 클래스 레벨보다 우선시 된다.
   public LearningActivity update(Long id, UpdateActivityRequest request) {
     LearningActivity activity = repository.findById(id)
@@ -153,7 +153,7 @@ public class ActivityService {
   }
 
   // Role이 ADMIN 이거나, activityGuard.isOwner가 true를 리턴한다면 허용. 나머지는 전부 403
-  @PreAuthorize("hasRole('ADMIN') or @activityGuard.isOwner(#id, authentication.name)")
+  @PreAuthorize("hasRole('ADMIN') or @activityGuard.isOwner(#id, authentication.principal.id)")
   @Transactional
   public void delete(Long id) {
     // 첨부파일명을 확보해야 합니다.

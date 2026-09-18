@@ -9,15 +9,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -35,7 +34,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtProvider jwtProvider;
-  private final UserDetailsService userDetailsService;
 
   @Override
   protected void doFilterInternal(
@@ -51,14 +49,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String username = claims.getSubject();
         Role role = jwtProvider.getRole(claims);
 
-        // 사용자 로드 -> DB로 실존 확인
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        // 권한을 세팅하는 것을 DB가 아닌 토큰에서 만든다.
+        List<SimpleGrantedAuthority> authorities
+            = List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+
+        JwtPrincipal principal = new JwtPrincipal(jwtProvider.getUserId(claims), username, role);
 
         // Security Context에 '인증 완료' 상태의 Authentication을 채운다.
         // 이걸 채워 놓아야 이후의 인가 (@PreAuthorize, AuthorizationFilter)는
         // 인증이 어디서 왔는지(세션인지 토큰인지) 모른채 똑같이 동작한다.
         UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken.authenticated(
-            userDetails, null, userDetails.getAuthorities()
+            principal, null, authorities
         );
         // 들어오는 HTTP 요청으로부터 인증과 관련된 부가적인 웹 메타데이터를 추출해서 인증 정보에 세팅하는 로직
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
@@ -77,9 +78,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       } catch (JwtException | IllegalArgumentException e) {
         request.setAttribute(ATTR_JWT_ERROR, ERROR_INVALID);
         log.debug("[JWT] 유효하지 않은 토큰으로 접근 - {}", e.getMessage());
-      } catch (UsernameNotFoundException e) {
-        request.setAttribute(ATTR_JWT_ERROR, ERROR_INVALID);
-        log.debug("[JWT] 토큰의 사용자가 존재하지 않음 - {}", e.getMessage());
       }
     }
 

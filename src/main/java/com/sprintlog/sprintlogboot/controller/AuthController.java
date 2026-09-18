@@ -3,7 +3,7 @@ package com.sprintlog.sprintlogboot.controller;
 import com.sprintlog.sprintlogboot.dto.request.LoginRequest;
 import com.sprintlog.sprintlogboot.dto.response.TokenResponse;
 import com.sprintlog.sprintlogboot.dto.response.UserResponse;
-import com.sprintlog.sprintlogboot.security.CustomUserDetails;
+import com.sprintlog.sprintlogboot.security.JwtPrincipal;
 import com.sprintlog.sprintlogboot.service.AuthService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -50,7 +50,7 @@ public class AuthController {
   }
 
   @GetMapping("/me")
-  public UserResponse me(@AuthenticationPrincipal CustomUserDetails principal) {
+  public UserResponse me(@AuthenticationPrincipal JwtPrincipal principal) {
     return UserResponse.from(principal.getUser());
   }
 
