@@ -7,12 +7,8 @@ import com.sprintlog.sprintlogboot.dto.response.UserResponse;
 import com.sprintlog.sprintlogboot.exception.BusinessException;
 import com.sprintlog.sprintlogboot.exception.ErrorCode;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
-import com.sprintlog.sprintlogboot.security.CustomUserDetails;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.session.SessionInformation;
-import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
   private final UserRepository userRepository;
-
   private final PasswordEncoder passwordEncoder;
-
-  private final SessionRegistry sessionRegistry;
 
   @Transactional
   public UserResponse register(SignUpRequest request) {
@@ -55,12 +48,13 @@ public class UserService {
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     user.changeRole(newRole);
 
-    expireSessionOf(email);
+//    expireSessionOf(email);
 
     User saved = userRepository.save(user);
     return UserResponse.from(saved);
   }
 
+  /*
   private void expireSessionOf(String email) {
     for (Object principal : sessionRegistry.getAllPrincipals()) {
       if (principal instanceof CustomUserDetails details
@@ -71,5 +65,5 @@ public class UserService {
       }
     }
   }
-
+  */
 }

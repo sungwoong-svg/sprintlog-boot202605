@@ -4,13 +4,11 @@ import com.sprintlog.sprintlogboot.dto.response.UserResponse;
 import com.sprintlog.sprintlogboot.security.CustomUserDetails;
 import java.util.List;
 import java.util.Map;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,14 +43,4 @@ public class AuthController {
   public UserResponse me(@AuthenticationPrincipal CustomUserDetails principal) {
     return UserResponse.from(principal.getUser());
   }
-
-  @GetMapping("/csrf-token")
-  public ResponseEntity<Object> csrfToken(CsrfToken csrfToken) {
-    csrfToken.getToken();
-    // 내용은 딱히 없고, csrf토큰을 한번 더 가져오라는 명령을 내립니다.
-    // 이 요청이 들어오는 과정에서 필터가 동작해 자동으로 쿠키를 생성합니다.
-    return ResponseEntity.noContent().build();
-
-  }
-
 }
