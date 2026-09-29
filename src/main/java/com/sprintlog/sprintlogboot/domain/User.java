@@ -91,4 +91,8 @@ public class User extends BaseEntity{
   public void changeRole(Role newRole) {
     this.role = newRole;
   }
+
+  public void changePassword(String encodePassword) {
+    this.password = encodePassword;
+  }
 }

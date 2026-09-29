@@ -73,6 +73,7 @@ sprintlog:
   # 운영 환경에서는 비밀키 노출 조심! 코드/설정 파일에 두지 않고 환경 변수로 주입 추천!
   jwt:
     secret: ${JWT_SECRET:sprintlog-jwt-secret-key-32bytes!}
-    access-token-validity: 30m
+    access-token-validity: 10m
+    refresh-token-validity: 14d
     issuer: sprintlog
 

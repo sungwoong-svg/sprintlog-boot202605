@@ -39,6 +39,11 @@ public class JwtProvider {
     );
   }
 
+  @Deprecated
+  public String createAccessToken(String username, Role role) {
+    return createAccessToken(null, username, role);
+  }
+
   // Access Token 생성
   // 페이로드 : sub(사용자 이름), role(역할), iss(발급자), iat(발급 시간), exp(만료 시간)
   public String createAccessToken(Long userId, String username, Role role) {

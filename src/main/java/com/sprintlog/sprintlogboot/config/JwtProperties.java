@@ -12,8 +12,10 @@ public class JwtProperties {
 
   private String secret;
 
-  private Duration accessTokenValidity = Duration.ofMinutes(30);
+  private Duration accessTokenValidity = Duration.ofMinutes(10);
 
   private String issuer = "sprintlog";
+
+  private Duration refreshTokenValidity = Duration.ofDays(14);
 
 }

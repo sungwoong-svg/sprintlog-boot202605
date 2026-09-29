@@ -69,6 +69,7 @@ public class SecurityConfig {
             // ── 공개(permitAll) — 로그인 전에도 되어야 하는 것들 ──
             .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()           // 회원가입
             .requestMatchers("/api/v1/auth/login").permitAll()                        // 로그인 처리
+            .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh", "/api/v1/auth/logout").permitAll()    // Access Token 재발급 요청
             .requestMatchers(HttpMethod.GET, "/api/v1/auth/whoami").permitAll()       // 익명 확인용 데모
             .requestMatchers(HttpMethod.GET, "/api/v1/activities/**", "/api/activities/**").permitAll() // 활동 조회는 공개(SprintLog 도메인)
             .requestMatchers("/", "/login.html", "/index.html", "/favicon.svg", "/assets/**").permitAll() // 정적 리소스

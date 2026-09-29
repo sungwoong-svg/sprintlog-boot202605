@@ -9,6 +9,8 @@ import com.sprintlog.sprintlogboot.exception.ErrorCode;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class UserService {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
+  private final RefreshTokenService refreshTokenService;
 
   @Transactional
   public UserResponse register(SignUpRequest request) {
@@ -43,12 +46,30 @@ public class UserService {
   }
 
   @Transactional
+  public User changePassword(String email, String currentPassword, String newPassword) {
+    User user = userRepository.findByEmail(email)
+        .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다." + email));
+
+    // 지금 비밀번호를 아는 사람만 바꿀 수 있다 — 토큰만 훔친 공격자는 계정을 빼앗지 못한다.
+    if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+      throw new BadCredentialsException("현재 비밀번호가 올바르지 않습니다.");
+    }
+
+    user.changePassword(passwordEncoder.encode(newPassword));
+    int killed = refreshTokenService.revokeAll(user);
+    log.info("[USER] 비밀번호 변경 - email={}, 무효화한 Refresh={}개", email, killed);
+    return user;
+  }
+
+  @Transactional
   public UserResponse changeRole(String email, Role newRole) {
     User user = userRepository.findByEmail(email)
         .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     user.changeRole(newRole);
 
 //    expireSessionOf(email);
+
+    int killed = refreshTokenService.revokeAll(user);
 
     User saved = userRepository.save(user);
     return UserResponse.from(saved);
