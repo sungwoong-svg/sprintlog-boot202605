@@ -28,6 +28,9 @@ dependencies {
     // Spring AOP - @Aspect / @Around 로 횡단 관심사 (로깅, 실행시간) 분리
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    // 재시도를 어노테이션으로 간단하게 (AOP 스타터가 있어야 동작합니다.)
+    implementation 'org.springframework.retry:spring-retry'
+
     // Spring Data JPA(표준) 위에 추상화 객체를 얹어서 JPA를 좀 더 편하게 사용할 수 있는 라이브러리
     // 구현체 Hibernate가 포함되어 있습니다.
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
