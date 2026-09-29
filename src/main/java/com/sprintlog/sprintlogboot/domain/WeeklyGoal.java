@@ -9,11 +9,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "weekly_goals")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter
 public class WeeklyGoal {
 
   @Id
@@ -25,6 +27,10 @@ public class WeeklyGoal {
   private User user;
 
   private int targetMinutes; // 이번 주 목표 학습 시간(분)
+
+  public void assignUser(User user) {
+    this.user = user;
+  }
 
   public WeeklyGoal(int targetMinutes) {
     if (targetMinutes <= 0) {

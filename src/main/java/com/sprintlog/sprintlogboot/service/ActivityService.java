@@ -8,6 +8,7 @@ import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.dto.request.CreateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.request.UpdateActivityRequest;
 import com.sprintlog.sprintlogboot.dto.response.ActivityResponse;
+import com.sprintlog.sprintlogboot.event.ActivityCreatedEvent;
 import com.sprintlog.sprintlogboot.exception.ActivityArchiveException;
 import com.sprintlog.sprintlogboot.exception.ActivityNotFoundException;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
@@ -18,6 +19,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -42,7 +44,7 @@ public class ActivityService {
   // 지표 수집기(MeterRegistry) - 커스텀 지표를 여기에 등록 후 증감시킨다.
   private final MeterRegistry meterRegistry;
 
-
+  private final ApplicationEventPublisher events;
 
 
   @Transactional(readOnly = true)
@@ -115,6 +117,11 @@ public class ActivityService {
       meterRegistry.counter("sprintlog.study.minutes.total").increment(saved.getMinutes());
 
       log.info("활동 생성 완료 id={}, category={}, title={}", saved.getId(), saved.getCategory(), saved.getTitle());
+
+      // 활동이 등록되었다는 사실만 알린다. 알림을 보낼지 통계를 고칠지는 듣는 쪽의 몫이다.
+      events.publishEvent(new ActivityCreatedEvent(
+          saved.getId(), owner.getId(), saved.getTitle(), saved.getMinutes(), saved.getStudiedOn()
+      ));
       return saved;
       });
   }
