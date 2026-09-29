@@ -5,6 +5,8 @@ import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -138,6 +140,25 @@ public class ActivityDashboard {
             studied += activity.getMinutes();
         }
         return goal.achievementRate(studied);
+    }
+
+    // 사용자별 집계
+    // 한 사용자가 '그 주'에 활동한 시간(분)을 더한다.
+    public int weeklyStudiedMinutes(Long ownerId, LocalDate anyDayOfWeek) {
+        LocalDate monday = anyDayOfWeek.with(DayOfWeek.MONDAY);
+        LocalDate sunday = monday.plusDays(6);
+
+        int total = 0;
+        for (LearningActivity activity : repository.findByOwnerId(ownerId)) {
+            LocalDate studiedOn = activity.getStudiedOn();
+            if (studiedOn == null) {
+                continue;
+            }
+            if (!studiedOn.isBefore(monday) && !studiedOn.isAfter(sunday)) {
+                total += activity.getMinutes();
+            }
+        }
+        return total;
     }
 
 }

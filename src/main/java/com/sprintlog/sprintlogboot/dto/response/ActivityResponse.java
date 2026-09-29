@@ -1,8 +1,11 @@
 package com.sprintlog.sprintlogboot.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.sprintlog.sprintlogboot.domain.*;
-
+import com.sprintlog.sprintlogboot.domain.ActivityCategory;
+import com.sprintlog.sprintlogboot.domain.LearningActivity;
+import com.sprintlog.sprintlogboot.domain.User;
+import com.sprintlog.sprintlogboot.domain.Visibility;
+import java.time.LocalDate;
 import java.util.Set;
 
 @JsonInclude(JsonInclude.Include.NON_NULL) // 값이 비어있는 필드는 제이슨에서 아에 빼버려라.
@@ -21,7 +24,9 @@ public record ActivityResponse(
 
         // 연관 관계 세팅 후 활동 객체 조회 시 활동을 추가한 유저 정보도 함께 응답
         Long ownerId,
-        String ownerNickname
+        String ownerNickname,
+
+        LocalDate studiedOn
 ) {
 
     /**
@@ -46,6 +51,7 @@ public record ActivityResponse(
                 activity.getCompletionRate(),
                 activity.getBookTitle(),
                 ownerId,
-                ownerNickname);
+                ownerNickname,
+                activity.getStudiedOn());
     }
 }

@@ -12,6 +12,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import lombok.Getter;
 
 import java.io.Serializable;
@@ -50,6 +51,8 @@ public class LearningActivity extends BaseEntity {
     @Column(length = 100)
     private String attachmentFileName; // 첨부 파일의 파일명(UUID), 필수가 아니기 때문의 널 허용
 
+    private LocalDate studiedOn;
+
     // 컬렉션 자료형을 별도의 테이블로 매핑. 테이블 이름은 activity_tags, 활동 테이블과 조인할 수 있는 외래 키 이름은 activity_id
     // ElementCollection: 활동 객체를 조회할 때 tag의 조회 방식
     // EAGER: 무조건 tag를 조인해서 끌고옴 / LAZY: 내가 직접 tag를 지목하기 전까진 조회 안됨 / 실무에서는 LAZY 선호 (효율)
@@ -82,6 +85,10 @@ public class LearningActivity extends BaseEntity {
         this.instructorName = normalizeInstructorName(category, instructorName);
         this.completionRate = normalizeCompletionRate(completionRate);
         this.bookTitle = bookTitle;
+    }
+
+    public void assignStudiedOn(LocalDate studiedOn) {
+        this.studiedOn = (studiedOn != null) ? studiedOn : LocalDate.now();
     }
 
     /**

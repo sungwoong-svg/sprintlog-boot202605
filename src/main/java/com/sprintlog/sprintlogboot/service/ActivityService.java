@@ -126,6 +126,8 @@ public class ActivityService {
         request.type(), request.title(), request.minutes(), request.visibility(),
         request.instructorName(), request.completionRate(), request.bookTitle());
 
+    activity.assignStudiedOn(request.studiedOn());
+
     if (request.tags() != null) {
       request.tags().forEach(activity::addTag);
     }
