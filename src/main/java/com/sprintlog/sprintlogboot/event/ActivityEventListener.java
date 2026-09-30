@@ -39,6 +39,7 @@ public class ActivityEventListener {
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   public void onCreatedForNotification(ActivityCreatedEvent event) {
     log.info("[이벤트·커밋후] 알림 판단 — 일꾼 {}", Thread.currentThread().getName());
+    notifications.sendAsyncWithWho("푸시");
 
     Optional<WeeklyGoal> goal = goalRepository.findByUserId(event.ownerId());
     if (goal.isEmpty()) {

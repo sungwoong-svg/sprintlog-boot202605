@@ -1,7 +1,6 @@
 package com.sprintlog.sprintlogboot.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sprintlog.sprintlogboot.filter.RequestIdFilter;
 import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
 import com.sprintlog.sprintlogboot.security.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -98,8 +97,7 @@ public class SecurityConfig {
         .httpBasic(Customizer.withDefaults())
 
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-        .addFilterAfter(new RequestIdFilter(), JwtAuthenticationFilter.class)
-        .addFilterAfter(new RequestLoggingFilter(), RequestIdFilter.class);
+        .addFilterBefore(new RequestLoggingFilter(), JwtAuthenticationFilter.class);
     return http.build();
   }
 

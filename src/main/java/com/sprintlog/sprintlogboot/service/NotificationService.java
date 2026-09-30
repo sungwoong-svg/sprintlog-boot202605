@@ -44,6 +44,16 @@ public class NotificationService {
     throw new NotificationFailedException(channel + "발송 실패(흉내)");
   }
 
+  @Async("notificationExecutor")
+  public void sendAsyncWithWho(String channel) {
+    var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+    String who = (auth != null) ? auth.getName() : "(모름)";
+    boolean inTx = org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive();
+
+    log.info("[비동기·누가] {} — 요청자 {} · 트랜잭션 {} · 일꾼 {}",
+        channel, who, inTx ? "있음" : "없음", Thread.currentThread().getName());
+  }
+
   public void sendViaSelfCall(String channel, String message) {
     log.info("[자가 호출] 부른 쪽 일꾼 {}", Thread.currentThread().getName());
     this.sendAsync(channel, message);
