@@ -31,6 +31,9 @@ spring:
       enabled: true
       max-file-size: 5MB
       max-request-size: 20MB
+  cache:
+    cache-names:
+      - activitySummary
 
 server:
   port: 8080
