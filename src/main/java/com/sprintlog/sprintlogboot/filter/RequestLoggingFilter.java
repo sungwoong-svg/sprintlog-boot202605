@@ -28,7 +28,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
       HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
     // 이 요청에만 붙는 짧은 번호. 로그 줄마다 따라다니게 해서 '같은 요청의 줄' 을 묶는다.
-    String traceId = UUID.randomUUID().toString().substring(0, 8);
+    String incoming = request.getHeader(TRACE_HEADER);
+    String traceId = (incoming != null && !incoming.isBlank())
+        ? incoming
+        : UUID.randomUUID().toString().substring(0, 8);
     MDC.put(TRACE_ID, traceId);
 
     // ⭐ 응답에도 실어 보낸다. 사용자가 "오류 화면에 이 번호가 떴어요" 라고 문의하면

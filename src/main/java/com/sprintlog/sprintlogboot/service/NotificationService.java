@@ -1,6 +1,9 @@
 package com.sprintlog.sprintlogboot.service;
 
+import com.sprintlog.sprintlogboot.client.NotificationApiClient;
 import com.sprintlog.sprintlogboot.exception.NotificationFailedException;
+import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
   private final NotificationGateway gateway;
+  private final NotificationApiClient notificationApiClient;
 
   public void sendBlocking(String channel, String message) {
     log.info("[동기] {} - 일꾼 {}", channel, Thread.currentThread().getName());
@@ -57,6 +61,17 @@ public class NotificationService {
   public void sendViaSelfCall(String channel, String message) {
     log.info("[자가 호출] 부른 쪽 일꾼 {}", Thread.currentThread().getName());
     this.sendAsync(channel, message);
+  }
+
+  @Async("notificationExecutor")
+  public void sendAsyncViaHttp(String channel, String message, long serverDelayMs) {
+    log.info("[비동기 HTTP] {} — 일꾼 {}", channel, Thread.currentThread().getName());
+
+    // 여기서 기다리는 건 알림 일꾼이다. 톰캣 일꾼은 이미 돌아갔다.
+    Map<String, Object> result = notificationApiClient.send(channel, message, serverDelayMs)
+        .block(Duration.ofSeconds(10));
+
+    log.info("[비동기 HTTP] {} — 결과 {}", channel, result);
   }
 
 }
