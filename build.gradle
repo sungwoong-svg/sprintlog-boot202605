@@ -34,6 +34,11 @@ dependencies {
     // Spring Data JPA(표준) 위에 추상화 객체를 얹어서 JPA를 좀 더 편하게 사용할 수 있는 라이브러리
     // 구현체 Hibernate가 포함되어 있습니다.
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // 회로 차단기 — Resilience4j. 부트가 버전을 관리하지 않아 직접 적는다(2026-03 최신 2.4.0).
+    //   spring-boot3 : @CircuitBreaker 애너테이션 + application.yml 설정 + Actuator 연동
+    //   reactor      : Mono·Flux 를 돌려주는 메서드에 애너테이션을 붙이려면 필요하다(WebClient 가 Mono 를 돌려준다)
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.4.0'
+    implementation 'io.github.resilience4j:resilience4j-reactor:2.4.0'
 
     // actuator - 애플리케이션 모니터링(상태, 정보, 지표)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

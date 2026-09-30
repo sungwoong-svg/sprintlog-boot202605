@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.client;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +41,27 @@ public class LectureApiClient {
           fallback.put("title", "(불러오지 못함)");
           return Mono.just(fallback);
         });
+  }
+
+  @CircuitBreaker(name = "lectureApi", fallbackMethod = "lectureUnavailable")
+  public Mono<Map<String, Object>> fetchLectureGuarded(long id, long serverDelayMs, boolean fail) {
+    return slowApiClient.get()
+        .uri(uriBuilder -> uriBuilder.path("/lectures/{id}")
+            .queryParam("ms", serverDelayMs)
+            .queryParam("fail", fail)
+            .build(id))
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+        .timeout(TIMEOUT);
+  }
+
+  /** 회로 차단기의 폴백 — 원래 메서드와 인자가 같고, 마지막에 예외 하나를 더 받는다. */
+  private Mono<Map<String, Object>> lectureUnavailable(long id, long serverDelayMs, boolean fail, Throwable e) {
+    log.warn("[회로 차단기] id={} 폴백 — {}", id, e.getClass().getSimpleName());
+    Map<String, Object> fallback = new LinkedHashMap<>();
+    fallback.put("id", id);
+    fallback.put("title", "(잠시 후 다시 시도해 주세요)");
+    return Mono.just(fallback);
   }
 
   public Mono<List<Map<String, Object>>> fetchAll(List<Long> ids, long serverDelayMs) {
