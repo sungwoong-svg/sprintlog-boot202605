@@ -34,6 +34,7 @@ spring:
   cache:
     cache-names:
       - activitySummary
+      - achievementRate
 
 server:
   port: 8080

@@ -1,6 +1,7 @@
 package com.sprintlog.sprintlogboot.service;
 
 import com.sprintlog.sprintlogboot.aspect.LogExecutionTime;
+import com.sprintlog.sprintlogboot.config.CacheConfig;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 @Service // 빈 등록 어노테이션, @Component랑 기능은 똑같고, 계층을 좀 더 명시적으로 표기
@@ -27,6 +29,7 @@ public class ActivityDashboard {
     /**
      * 카테고리별 활동 수를 세어 Summary를 만들자.
      */
+    @Cacheable(CacheConfig.ACTIVITY_SUMMARY)
     @LogExecutionTime
     public Summary summarize() {
 
@@ -133,6 +136,8 @@ public class ActivityDashboard {
         return Collections.unmodifiableList(result);
     }
 
+    @Cacheable(value = CacheConfig.ACHIEVEMENT_RATE, key = "#goalMinutes", unless = "#result == 0")
+    @LogExecutionTime
     public int achievementRate(int goalMinutes) {
         WeeklyGoal goal = new WeeklyGoal(goalMinutes);
         int studied = 0;

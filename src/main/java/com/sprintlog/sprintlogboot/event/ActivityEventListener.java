@@ -1,5 +1,6 @@
 package com.sprintlog.sprintlogboot.event;
 
+import com.sprintlog.sprintlogboot.config.CacheConfig;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
 import com.sprintlog.sprintlogboot.repository.WeeklyGoalRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
@@ -8,6 +9,8 @@ import com.sprintlog.sprintlogboot.service.NotificationService;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -67,6 +70,16 @@ public class ActivityEventListener {
   @TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
   public void onRolledBack(ActivityCreatedEvent event) {
     log.warn("[이벤트·롤백] 활동 등록이 취소됐다 — 알림을 보내지 않는다. 제목={}", event.title());
+  }
+
+  @Caching(evict = {
+      @CacheEvict(cacheNames = CacheConfig.ACTIVITY_SUMMARY, allEntries = true),
+      @CacheEvict(cacheNames = CacheConfig.ACHIEVEMENT_RATE, allEntries = true)
+  })
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  public void onCreatedEvictCaches(ActivityCreatedEvent event) {
+
+
   }
 
 }
