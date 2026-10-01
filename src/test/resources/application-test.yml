@@ -27,4 +27,7 @@ logging:
     com.sprintlog: DEBUG # 우리 패키지만 상세히
 
 sprintlog:
+  cache:
+    max-size: 5
+    ttl-seconds: 60
   file-directory: ./build/test-uploads

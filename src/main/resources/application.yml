@@ -67,6 +67,9 @@ springdoc:
     path: /my-api # swagger가 우리 API의 정볼르 얻어오기 위해서 요청하는 url
 
 sprintlog:
+  cache:
+    max-size: 5
+    ttl-seconds: 60
   welcome-message: "SprintLog Boot - 외부 설정 시연(기본)"
   sample-data:
     enabled: true
