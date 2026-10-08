@@ -43,7 +43,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, metrics # 꼭 필요한 정보만 노출 # include 중 env는 제외해야함(db, pw, api secret key 등)
+        include: health, info, metrics, caches # 꼭 필요한 정보만 노출 # include 중 env는 제외해야함(db, pw, api secret key 등)
       base-path: /management # 경로도 바꿔서 숨김
 
   endpoint:

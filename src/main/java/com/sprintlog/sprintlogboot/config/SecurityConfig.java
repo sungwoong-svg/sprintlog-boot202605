@@ -78,6 +78,7 @@ public class SecurityConfig {
             .requestMatchers("/api/v1/me/**").hasRole("USER")
             // 권한 변경 API 는 관리자만(메서드 레벨 @PreAuthorize 와 두 겹).
             .requestMatchers(HttpMethod.PUT, "/api/v1/auth/role").hasRole("ADMIN")
+            .requestMatchers(HttpMethod.DELETE, "/management/caches", "/management/caches/**").hasRole("ADMIN")
             // ── 그 외 전부 로그인 필요(기본 잠금) ──
             //   활동 쓰기(POST/PUT/DELETE)·현재 사용자(/me) 등은 자동으로 여기에 걸린다.
             //   소유권 등 세밀한 검사는 서비스의 @PreAuthorize 가 이어서 한다(두 겹 방어).

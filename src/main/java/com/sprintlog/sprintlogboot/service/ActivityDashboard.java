@@ -29,7 +29,7 @@ public class ActivityDashboard {
     /**
      * 카테고리별 활동 수를 세어 Summary를 만들자.
      */
-    @Cacheable(CacheConfig.ACTIVITY_SUMMARY)
+    @Cacheable(value = CacheConfig.ACTIVITY_SUMMARY, sync = true)
     @LogExecutionTime
     public Summary summarize() {
 
