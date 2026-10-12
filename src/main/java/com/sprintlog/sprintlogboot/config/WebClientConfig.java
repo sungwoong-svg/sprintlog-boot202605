@@ -11,7 +11,8 @@ public class WebClientConfig {
   @Bean
   public WebClient slowApiClient(WebClient.Builder builder,
       TraceIdForwardingFilter traceIdForwarding,
-      @Value("${sprintlog.slow-api.url:http://localhost:8081}") String baseUrl) {
+      @Value("${sprintlog.slow-api.base-url:http://localhost:8081}")
+      String baseUrl) {
     return builder
         .baseUrl(baseUrl)
         .defaultHeader("X-Called-by", "sprintlog")

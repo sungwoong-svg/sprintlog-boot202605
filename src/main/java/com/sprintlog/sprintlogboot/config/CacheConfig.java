@@ -35,8 +35,8 @@ public class CacheConfig {
 
   @Bean
   public Caffeine<Object, Object> caffeineConfig(
-      @Value("${spring.cache.max-size}") long maxSize,
-      @Value("${spring.cache.ttl-seconds}") long ttlSeconds,
+      @Value("${sprintlog.cache.max-size}") long maxSize,
+      @Value("${sprintlog.cache.ttl-seconds}") long ttlSeconds,
       MeterRegistry meterRegistry) {
     return Caffeine.newBuilder()
         .maximumSize(maxSize)

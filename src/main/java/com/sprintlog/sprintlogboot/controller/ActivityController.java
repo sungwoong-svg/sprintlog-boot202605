@@ -18,7 +18,6 @@ import com.sprintlog.sprintlogboot.service.ActivityService;
 import com.sprintlog.sprintlogboot.service.FileStorage;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.io.Serializable;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +133,7 @@ public class ActivityController implements ActivityControllerDocs{
 
     // 활동의 첨부 파일 보기. 우리 서버가 S3로부터 받은 임시 url을 302로 응답한다.
     // 클라이언트 측에서 status를 보고 S3에서 다운로드한다.
-    @GetMapping("/{id}attachment")
+    @GetMapping("/{id}/attachment")
     public ResponseEntity<Void> attachment(@PathVariable Long id) {
         LearningActivity activity = activityService.get(id);
         String storedName = activity.getAttachmentFileName();
@@ -147,7 +146,7 @@ public class ActivityController implements ActivityControllerDocs{
     }
 
     // 첨부파일 다운로드 요청. 이것도 S3으로부터 전달 받은 임시 url을 302로 응답
-    @GetMapping("/{id}attachment/download")
+    @GetMapping("/{id}/attachment/download")
     public ResponseEntity<Void> downloadAttachment(@PathVariable Long id) {
         LearningActivity activity = activityService.get(id);
         String storedName = activity.getAttachmentFileName();
@@ -223,12 +222,18 @@ public class ActivityController implements ActivityControllerDocs{
     }
 
     @GetMapping("/achievement")
-    public ResponseEntity<Map<String, Serializable>> achievement(@RequestParam int goalMinutes) {
+    public ResponseEntity<Map<String, Integer>> achievement(
+        @RequestParam int goalMinutes) {
+
         if (goalMinutes <= 0) {
             throw new IllegalArgumentException("주간 목표 시간은 1분 이상이어야 합니다.");
         }
+
         int rate = dashboard.achievementRate(goalMinutes);
-        return ResponseEntity.ok().body(Map.of("goalMinutes", goalMinutes, "achievementRate", rate + "%"));
+
+        return ResponseEntity.ok().body(
+            Map.of("goalMinutes", goalMinutes, "achievementRate", rate)
+        );
     }
 
     // 트랜잭션 원자성 시연 = 활동 등록 (활동 저장 + 이력 기록)을 한 트랜잭션

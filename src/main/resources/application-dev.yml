@@ -21,6 +21,8 @@ sprintlog:
   sample-data:
     enabled: true
     count: 4
+  ws:
+    echo-enabled: true
 
 # 개발 시에는 자세한 로그가 도움됨.
 logging:
