@@ -2,6 +2,9 @@ package com.sprintlog.sprintlogboot.event;
 
 import com.sprintlog.sprintlogboot.config.CacheConfig;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
+import com.sprintlog.sprintlogboot.filter.RequestLoggingFilter;
+import com.sprintlog.sprintlogboot.notification.GoalAchievedMessage;
+import com.sprintlog.sprintlogboot.notification.NotificationEmitters;
 import com.sprintlog.sprintlogboot.repository.WeeklyGoalRepository;
 import com.sprintlog.sprintlogboot.service.ActivityDashboard;
 import com.sprintlog.sprintlogboot.service.AuditService;
@@ -9,6 +12,7 @@ import com.sprintlog.sprintlogboot.service.NotificationService;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.context.event.EventListener;
@@ -26,6 +30,7 @@ public class ActivityEventListener {
   private final NotificationService notifications;
   private final ActivityDashboard dashboard;
   private final WeeklyGoalRepository goalRepository;
+  private final NotificationEmitters emitters;
 
   @EventListener
   public void onCreatedForAudit(ActivityCreatedEvent event) {
@@ -52,7 +57,9 @@ public class ActivityEventListener {
 
     int studied = dashboard.weeklyStudiedMinutes(event.ownerId(), event.studiedOn());
     if (goal.get().isAchieved(studied)) {
-      notifications.sendAsync("푸시", "이번 주 목표 달성! (" + studied + "분)");
+      String message = "이번 주 목표 달성! (" + studied + "분)";
+      emitters.send(event.ownerId(), "goal-achieved",
+          new GoalAchievedMessage(message, studied, MDC.get(RequestLoggingFilter.TRACE_ID)));
     } else {
       log.info("[이벤트·커밋후] 아직 {}분 남았다", goal.get().remainingMinutes(studied));
     }
