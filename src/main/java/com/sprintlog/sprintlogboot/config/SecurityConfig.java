@@ -76,6 +76,7 @@ public class SecurityConfig {
             // 처음 웹소켓 핸드셰이크 통로는 열어 두어야 한다.
             .requestMatchers(HttpMethod.GET, "/ws/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/sse/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/v1/notifications/stream").permitAll()
             // ── 역할 기반 ──
             .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
             .requestMatchers("/api/v1/me/**").hasRole("USER")
