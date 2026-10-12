@@ -5,11 +5,13 @@ import com.sprintlog.sprintlogboot.domain.ActivityAuditLog;
 import com.sprintlog.sprintlogboot.domain.ActivityCategory;
 import com.sprintlog.sprintlogboot.domain.LearningActivity;
 import com.sprintlog.sprintlogboot.domain.Role;
+import com.sprintlog.sprintlogboot.domain.StudyRoom;
 import com.sprintlog.sprintlogboot.domain.User;
 import com.sprintlog.sprintlogboot.domain.Visibility;
 import com.sprintlog.sprintlogboot.domain.WeeklyGoal;
 import com.sprintlog.sprintlogboot.repository.ActivityRepository;
 import com.sprintlog.sprintlogboot.repository.AuditLogRepository;
+import com.sprintlog.sprintlogboot.repository.StudyRoomRepository;
 import com.sprintlog.sprintlogboot.repository.UserRepository;
 import com.sprintlog.sprintlogboot.repository.WeeklyGoalRepository;
 import jakarta.annotation.PostConstruct;
@@ -33,6 +35,7 @@ public class DataInitializer {
 
     private final AuditLogRepository auditLogRepository;
     private final WeeklyGoalRepository goalRepository;
+    private final StudyRoomRepository studyRoomRepository;
 
     // 비밀번호 암호화를 위한 빈 주입
     private final PasswordEncoder passwordEncoder;
@@ -93,6 +96,13 @@ public class DataInitializer {
             auditLogRepository.save(new ActivityAuditLog("ACTIVITY_DELETE", "활동 삭제 - '읽다 만 책' (hong@gmail.com)"));
             auditLogRepository.save(new ActivityAuditLog("ROLE_CHANGE", "권한 변경 - hong@gmail.com: USER → ADMIN (관리자 수행)"));
             log.info("[lifecycle] 감사 로그 샘플 {}건 생성", auditLogRepository.count());
+        }
+
+        if (studyRoomRepository.count() == 0) {
+            studyRoomRepository.save(new StudyRoom("Spring 스터디", "스프링·스프링 부트를 함께 공부해요"));
+            studyRoomRepository.save(new StudyRoom("알고리즘", "코딩 테스트 문제를 같이 풀어요"));
+            studyRoomRepository.save(new StudyRoom("CS 기초", "네트워크·운영체제·데이터베이스"));
+            log.info("[lifecycle] 같이 공부하기 방 {}개 생성", studyRoomRepository.count());
         }
 
         log.info("DB 사용자 수: {}명", userRepository.count());
