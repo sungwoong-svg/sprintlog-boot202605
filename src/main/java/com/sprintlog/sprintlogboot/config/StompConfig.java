@@ -1,6 +1,7 @@
 package com.sprintlog.sprintlogboot.config;
 
 import com.sprintlog.sprintlogboot.websocket.StompAuthChannelInterceptor;
+import com.sprintlog.sprintlogboot.websocket.StompErrorHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -11,6 +12,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -18,6 +20,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
   private final StompAuthChannelInterceptor authInterceptor;
+  private final StompErrorHandler errorHandler;
 
   // 하트비트를 보내려면 시계(스케줄러)가 필요하고, STOMP 설정이 이미 하나 만들어 두므로 그걸 갖다 쓴다.
   private TaskScheduler messageBrokerTaskScheduler;
@@ -31,6 +34,15 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/ws");
+    registry.setErrorHandler(errorHandler);
+  }
+
+  @Override
+  public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+    registration
+        .setMessageSizeLimit(8 * 1024) // 받는 메시지 하나 최대 8KB
+        .setSendBufferSizeLimit(512 * 1024) // 느린 사람에게 쌓아 둘 수 있는 양
+        .setSendTimeLimit(10_000); // 한 사람에게 보내는데 10초 넘게 걸리면 그 연결을 끊겠다.
   }
 
   @Override

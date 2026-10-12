@@ -5,18 +5,25 @@ import com.sprintlog.sprintlogboot.websocket.StudyRoomMessages.Presence;
 import com.sprintlog.sprintlogboot.websocket.StudyRoomMessages.RoomMessage;
 import com.sprintlog.sprintlogboot.websocket.StudyRoomMessages.StatusRequest;
 import java.security.Principal;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 @Slf4j
 @Controller
 @RequiredArgsConstructor
 public class StudyRoomMessageController {
+
+  public static final int MAX_CHAT_LENGTH = 500;
 
   private final SimpMessagingTemplate messaging;
   private final StudyRoomPresence presence;
@@ -39,6 +46,10 @@ public class StudyRoomMessageController {
   public void chat(@DestinationVariable Long roomId, ChatRequest request,
       SimpMessageHeaderAccessor headers, Principal principal) {
     String nickname = nicknameOf(principal, headers.getSessionId());
+    String content = request.content() == null ? "" : request.content().strip();
+    if (content.isEmpty() || content.length() > MAX_CHAT_LENGTH) {
+      throw new IllegalArgumentException("채팅은 1~" + MAX_CHAT_LENGTH + "자까지 보낼 수 있어요.");
+    }
     log.info("[STOMP] 채팅 — 방 {} · {} · \"{}\"", roomId, nickname, request.content());
     broadcast(roomId, RoomMessage.of("CHAT", roomId, nickname, request.content(), null));
   }
@@ -62,6 +73,24 @@ public class StudyRoomMessageController {
     log.info("[STOMP] 퇴장 — 방 {} · {}", roomId, nickname);
     broadcast(roomId, RoomMessage.of("LEAVE", roomId, nickname, nickname + " 님이 나갔어요", null));
     broadcastPresence(roomId);
+  }
+
+  @EventListener
+  public void onDisconnect(SessionDisconnectEvent event) {
+    Map<Long, String> left = presence.leaveAll(event.getSessionId());
+    log.info("[STOMP] 연결 끊김 - 세션 {}, 상태{} 정리한 방 {}", event.getSessionId(), event.getCloseStatus(), left.keySet());
+    left.forEach((roomId, nickname) -> {
+      broadcast(roomId, RoomMessage.of("LEAVE", roomId, nickname, nickname + " 님이 연결이 끊겼어요", null));
+      broadcastPresence(roomId);
+    });
+  }
+
+  // 이 컨트롤러의 메서드에서 IllegalArgumentException이 발생하면 이 메서드가 호출
+  // 방 전체 X, 보낸 그 사람에게만 /user/queue/errors로 알린다.
+  @MessageExceptionHandler(IllegalArgumentException.class)
+  @SendToUser(destinations = "/queue/errors", broadcast = false)
+  public Map<String, String> handlerBadMessage(IllegalArgumentException e) {
+    return Map.of("message", e.getMessage());
   }
 
   // 접속자 목록을 방송 (채팅창 내)

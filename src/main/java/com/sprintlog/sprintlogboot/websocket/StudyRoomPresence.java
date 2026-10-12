@@ -2,6 +2,7 @@ package com.sprintlog.sprintlogboot.websocket;
 
 import com.sprintlog.sprintlogboot.websocket.StudyRoomMessages.Member;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +35,18 @@ public class StudyRoomPresence {
     }
     Member removed = members.remove(sessionId);
     return removed == null ? null : removed.nickname();
+  }
+
+  // 연결이 끊긴 세션을 모든 방을 뒤져서 뺀다. - 빠진 방 번호와 그 사람의 닉네임을 돌려준다.
+  public Map<Long, String> leaveAll(String sessionId) {
+    Map<Long, String> left = new HashMap<>();
+    rooms.forEach((roomId, members) -> {
+      Member removed = members.remove(sessionId);
+      if (removed != null) {
+        left.put(roomId, removed.nickname());
+      }
+    });
+    return left;
   }
 
   public List<Member> members(Long roomId) {
