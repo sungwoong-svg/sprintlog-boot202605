@@ -1,7 +1,11 @@
 package com.sprintlog.sprintlogboot.config;
 
+import com.sprintlog.sprintlogboot.websocket.StompAuthChannelInterceptor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -10,12 +14,17 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class StompConfig implements WebSocketMessageBrokerConfigurer {
+
+  private final StompAuthChannelInterceptor authInterceptor;
 
   // 하트비트를 보내려면 시계(스케줄러)가 필요하고, STOMP 설정이 이미 하나 만들어 두므로 그걸 갖다 쓴다.
   private TaskScheduler messageBrokerTaskScheduler;
 
-  public StompConfig(@Lazy TaskScheduler messageBrokerTaskScheduler) {
+  @Autowired
+  public void setMessageBrokerTaskScheduler(
+      @Lazy TaskScheduler messageBrokerTaskScheduler) {
     this.messageBrokerTaskScheduler = messageBrokerTaskScheduler;
   }
 
@@ -31,5 +40,10 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
         .setTaskScheduler(messageBrokerTaskScheduler);
     registry.setApplicationDestinationPrefixes("/app"); // /app으로 시작하는 건 브로커가 아니라 우리 컨트롤러가 처리한다.
     registry.setUserDestinationPrefix("/user");
+  }
+
+  @Override
+  public void configureClientInboundChannel(ChannelRegistration registration) {
+    registration.interceptors(authInterceptor);
   }
 }
